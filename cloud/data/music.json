@@ -1,0 +1,35 @@
+{
+ "schema": "zhichao.music/v1",
+ "updatedAt": "2026-11-16T23:20:00+08:00",
+ "note": "想加自己的曲子：把 mp3 放进 assets/music/，在 tracks 里加一行（id 唯一、file 写相对路径），页面会自动出现在设置的「曲目」下拉里。",
+ "license": "本列表曲目均为 Kevin MacLeod（incompetech.com）作品，CC BY 4.0；使用时保留署名即可商用与改编。",
+ "tracks": [
+  {
+   "id": "at-rest",
+   "title": "静息",
+   "subtitle": "At Rest",
+   "artist": "Kevin MacLeod",
+   "file": "assets/music/at-rest.mp3",
+   "duration": 207,
+   "credit": "Kevin MacLeod · incompetech.com · CC BY 4.0"
+  },
+  {
+   "id": "dreams",
+   "title": "梦成真时",
+   "subtitle": "Dreams Become Real",
+   "artist": "Kevin MacLeod",
+   "file": "assets/music/dreams-become-real.mp3",
+   "duration": 410,
+   "credit": "Kevin MacLeod · incompetech.com · CC BY 4.0"
+  },
+  {
+   "id": "heartbreaking",
+   "title": "说不出口",
+   "subtitle": "Heartbreaking",
+   "artist": "Kevin MacLeod",
+   "file": "assets/music/heartbreaking.mp3",
+   "duration": 96,
+   "credit": "Kevin MacLeod · incompetech.com · CC BY 4.0"
+  }
+ ]
+}

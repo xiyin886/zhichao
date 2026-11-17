@@ -1,0 +1,421 @@
+/* ==========================================================================
+ * 知潮 · 设置与主题中心（theme.css）
+ * 规范：game-ui-integration-spec.md §6 CSS 约定
+ *  - 主题状态挂 <html data-zc-theme="light|dark">，本文件用属性选择器覆盖
+ *    现有 :root 与 @media (prefers-color-scheme: dark) 变量（特异性更高）；
+ *    现有变量名保持不变，只改值，不删除/改写原有规则。
+ *  - 新 class 一律 zc- 前缀；设置面板私有 class 为 zc-set-*。
+ *  - z-index：设置面板 7000–7999（本文件仅使用 7000）。
+ *  - 视觉语言：莫兰迪低饱和粉/紫、柔雾磨砂、圆角 14–22px。
+ * ========================================================================== */
+
+/* ---------- 共享设计变量（--zc-*，模块可复用） ---------- */
+:root {
+  --zc-panel-z: 7000;
+  --zc-radius: var(--radius, 22px);
+  --zc-radius-sm: var(--radius-sm, 14px);
+  --zc-row-h: 44px;
+  --zc-gap: 12px;
+  --zc-track-w: 48px;
+  --zc-track-h: 28px;
+  --zc-knob: 24px;
+  --zc-shadow: var(--shadow-lift, 0 20px 44px -22px rgba(0, 0, 0, .35));
+}
+
+/* ==========================================================================
+ * 主题变量覆盖
+ * 选择器 html[data-zc-theme="..."] 特异性 (0,1,1)，高于 :root (0,1,0)
+ * 及其媒体查询内同名规则，可在 auto/light/dark 三态间稳定覆盖。
+ * ========================================================================== */
+
+/* 手动浅色：覆盖系统处于暗色时媒体块给出的暗色变量 */
+html[data-zc-theme="light"] {
+  --bg: #f3edf2;
+  --bg-deep: #e9e1ea;
+  --glass: rgba(255, 255, 255, .60);
+  --glass-strong: rgba(255, 255, 255, .78);
+  --glass-soft: rgba(255, 255, 255, .40);
+  --surface: #fbf8fb;
+  --surface-2: #f3edf3;
+  --text: #494350;
+  --muted: #898093;
+  --faint: #aaa2b2;
+  --line: rgba(255, 255, 255, .78);
+  --line-soft: rgba(122, 102, 124, .10);
+  --accent: #ad7f8f;
+  --accent-deep: #96697a;
+  --accent-2: #7d86a3;
+  --accent-soft: rgba(173, 127, 143, .14);
+  --gold: #a8906a;
+  --chip: rgba(255, 255, 255, .52);
+  --grad-accent: linear-gradient(135deg, #bd92a0, #96697a);
+  --grad-glow: radial-gradient(circle at 50% 42%, rgba(190, 150, 168, .40), transparent 70%);
+  --shadow: 0 2px 10px rgba(126, 104, 128, .06), 0 16px 34px -24px rgba(126, 104, 128, .30);
+  --shadow-lift: 0 4px 14px rgba(126, 104, 128, .10), 0 26px 48px -24px rgba(126, 104, 128, .40);
+  --glow-accent: 0 12px 26px -14px rgba(150, 102, 122, .6);
+}
+
+/* 手动/解析后暗色：覆盖媒体块与浅色规则 */
+html[data-zc-theme="dark"] {
+  --bg: #211d27;
+  --bg-deep: #19161d;
+  --glass: rgba(46, 41, 54, .58);
+  --glass-strong: rgba(52, 46, 60, .82);
+  --glass-soft: rgba(255, 255, 255, .05);
+  --surface: #2c2734;
+  --surface-2: #352f3d;
+  --text: #e9e3ec;
+  --muted: #a39aac;
+  --faint: #7c7486;
+  --line: rgba(255, 255, 255, .11);
+  --line-soft: rgba(255, 255, 255, .08);
+  --accent: #d2a4b3;
+  --accent-deep: #e2b9c6;
+  --accent-2: #9aa4c2;
+  --accent-soft: rgba(210, 164, 179, .16);
+  --gold: #cbb287;
+  --chip: rgba(255, 255, 255, .07);
+  --grad-accent: linear-gradient(135deg, #c98ea0, #a87588);
+  --grad-glow: radial-gradient(circle at 50% 42%, rgba(200, 150, 175, .28), transparent 70%);
+  --shadow: 0 2px 10px rgba(0, 0, 0, .30);
+  --shadow-lift: 0 20px 44px -22px rgba(0, 0, 0, .62);
+  --glow-accent: 0 12px 26px -14px rgba(200, 150, 175, .5);
+}
+
+/* 暗色下正文背景渐变同步压暗（原规则为浅色硬编码渐变，此处仅追加覆盖，不改原规则） */
+html[data-zc-theme="dark"] body {
+  background:
+    radial-gradient(1200px 760px at 4% -22%, rgba(120, 86, 104, .30), transparent 60%),
+    radial-gradient(1080px 700px at 102% -14%, rgba(88, 92, 128, .26), transparent 62%),
+    radial-gradient(1100px 720px at 46% 116%, rgba(76, 104, 96, .18), transparent 60%),
+    radial-gradient(720px 440px at 80% 44%, rgba(110, 92, 124, .16), transparent 72%),
+    linear-gradient(176deg, #26212d, var(--bg) 40%, var(--bg-deep));
+}
+
+/* ==========================================================================
+ * 设置面板（游戏菜单风格，zc-set-*）
+ * z-index 7000，落在规范 7000–7999 段。
+ * ========================================================================== */
+
+.zc-set-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--zc-panel-z);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(35, 28, 38, .40);
+  -webkit-backdrop-filter: blur(8px) saturate(1.2);
+  backdrop-filter: blur(8px) saturate(1.2);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .22s ease;
+}
+
+.zc-set-overlay.zc-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.zc-set-panel {
+  width: 100%;
+  max-width: 420px;
+  max-height: 82dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--glass-strong);
+  -webkit-backdrop-filter: blur(22px) saturate(1.35);
+  backdrop-filter: blur(22px) saturate(1.35);
+  border: 1px solid var(--line);
+  border-radius: var(--zc-radius);
+  box-shadow: var(--zc-shadow);
+  overflow: hidden;
+  transform: translateY(10px) scale(.98);
+  transition: transform .22s ease;
+}
+
+.zc-set-overlay.zc-open .zc-set-panel {
+  transform: translateY(0) scale(1);
+}
+
+/* ---- 头部 ---- */
+.zc-set-head {
+  display: flex;
+  align-items: center;
+  gap: var(--zc-gap);
+  padding: 18px 18px 12px;
+}
+
+.zc-set-title {
+  font-family: var(--serif, serif);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--text);
+}
+
+.zc-set-theme {
+  margin-left: auto;
+}
+
+.zc-set-close {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--line-soft);
+  border-radius: 12px;
+  background: var(--glass-soft);
+  color: var(--muted);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: .18s;
+}
+
+.zc-set-close:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+/* ---- 面板主体 ---- */
+.zc-set-body {
+  overflow-y: auto;
+  padding: 4px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  scrollbar-width: thin;
+}
+
+.zc-set-badge {
+  align-self: flex-start;
+  font-size: 11px;
+  letter-spacing: .6px;
+  color: var(--muted);
+  background: var(--chip);
+  border: 1px solid var(--line-soft);
+  border-radius: 999px;
+  padding: 4px 12px;
+  margin: 2px 0 6px;
+}
+
+.zc-set-sec-title {
+  font-size: 10.5px;
+  letter-spacing: 2.2px;
+  text-transform: uppercase;
+  color: var(--faint);
+  padding: 14px 4px 4px;
+}
+
+/* ---- 行 ---- */
+.zc-set-row {
+  display: flex;
+  align-items: center;
+  gap: var(--zc-gap);
+  min-height: var(--zc-row-h);
+  padding: 9px 4px;
+}
+
+.zc-set-row-info {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.zc-set-row-name {
+  font-size: 14px;
+  color: var(--text);
+  letter-spacing: .3px;
+}
+
+.zc-set-row-desc {
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.zc-set-row.zc-disabled,
+.zc-set-seg.zc-disabled {
+  opacity: .45;
+}
+
+/* ---- 开关 ---- */
+.zc-set-switch {
+  flex: 0 0 auto;
+  width: var(--zc-track-w);
+  height: var(--zc-track-h);
+  border-radius: 999px;
+  border: 1px solid var(--line-soft);
+  background: var(--chip);
+  position: relative;
+  cursor: pointer;
+  padding: 0;
+  transition: background .2s ease, border-color .2s ease;
+}
+
+.zc-set-switch[aria-checked="true"] {
+  background: var(--grad-accent);
+  border-color: transparent;
+}
+
+.zc-set-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: var(--zc-knob);
+  height: var(--zc-knob);
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .25);
+  transition: left .2s ease;
+}
+
+.zc-set-switch[aria-checked="true"] .zc-set-knob {
+  left: calc(var(--zc-track-w) - var(--zc-knob) - 2px);
+}
+
+/* ---- 分段选择（主题 / 粒子样式） ---- */
+.zc-set-seg {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: var(--zc-radius-sm);
+  background: var(--glass-soft);
+}
+
+.zc-set-seg button {
+  min-height: 36px;
+  padding: 6px 13px;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: .18s;
+  white-space: nowrap;
+}
+
+.zc-set-seg button.zc-on {
+  background: var(--grad-accent);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: var(--glow-accent);
+}
+
+.zc-set-seg button:disabled {
+  cursor: not-allowed;
+}
+
+/* ---- 下拉（帧率） ---- */
+.zc-set-select {
+  flex: 0 0 auto;
+  min-height: 40px;
+  padding: 6px 12px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--zc-radius-sm);
+  background: var(--glass-soft);
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+}
+
+.zc-set-select:focus {
+  border-color: var(--accent);
+}
+
+/* ---- 行内操作按钮（看板娘位置复位等） ---- */
+.zc-set-btn {
+  flex: 0 0 auto;
+  min-height: 40px;
+  padding: 6px 14px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--zc-radius-sm);
+  background: var(--glass-soft);
+  color: var(--accent-deep);
+  font-size: 12.5px;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color .18s ease, background .18s ease, color .18s ease;
+}
+
+.zc-set-btn:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.zc-set-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---- 音量滑杆 ---- */
+.zc-set-range {
+  flex: 0 1 130px;
+  width: 130px;
+  accent-color: var(--accent);
+  min-height: 40px;
+}
+
+.zc-set-val {
+  flex: 0 0 38px;
+  font-size: 11.5px;
+  color: var(--muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================================
+ * 响应式：窄屏面板全屏化，触控目标 ≥40px（沿用现有 720px 断点）
+ * ========================================================================== */
+@media (max-width: 720px) {
+  .zc-set-overlay {
+    padding: 0;
+    align-items: stretch;
+  }
+
+  .zc-set-panel {
+    max-width: 100%;
+    width: 100%;
+    max-height: 100dvh;
+    height: 100dvh;
+    border-radius: 0;
+    border: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .zc-set-body {
+    padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .zc-set-range {
+    flex-basis: 110px;
+    width: 110px;
+  }
+}
+
+/* ==========================================================================
+ * 减弱动效：停用本模块全部过渡/动画（§4 / §6）
+ * ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  .zc-set-overlay,
+  .zc-set-panel,
+  .zc-set-switch,
+  .zc-set-knob,
+  .zc-set-seg button,
+  .zc-set-close {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .zc-set-panel {
+    transform: none;
+  }
+}

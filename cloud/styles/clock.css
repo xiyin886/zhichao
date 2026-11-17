@@ -1,0 +1,244 @@
+/* ==========================================================================
+   知潮 · 月晷时钟（汐音的时辰）
+   ------------------------------------------------------------------------
+   私有前缀 ckc-*。视觉：月牙指针 + 24 小时色温轨道 + 时段台词。
+   与 checkin.css 同一套玻璃/粉紫语言，z-index 只在条内使用，不与看板娘、
+   聊天、设置冲突；减弱动效时全部动画关闭。
+   ========================================================================== */
+
+.ckc{
+  position:relative;
+  display:grid;
+  grid-template-columns:auto auto minmax(150px,1fr) minmax(160px,.9fr);
+  align-items:center;
+  gap:16px;
+  margin:0 0 18px;
+  padding:11px 18px 12px;
+  border:1px solid var(--line);
+  border-radius:18px;
+  background:
+    radial-gradient(120% 220% at 0% -30%, color-mix(in srgb, var(--ckc-tint, var(--accent)) 16%, transparent), transparent 62%),
+    var(--glass);
+  -webkit-backdrop-filter:blur(20px) saturate(1.3);
+  backdrop-filter:blur(20px) saturate(1.3);
+  box-shadow:var(--shadow);
+  overflow:hidden;
+}
+html[data-zc-theme="dark"] .ckc{
+  background:
+    radial-gradient(120% 220% at 0% -30%, color-mix(in srgb, var(--ckc-tint, var(--accent)) 26%, transparent), transparent 62%),
+    var(--glass);
+}
+
+/* ---------- 月晷表盘 ---------- */
+.ckc-dial{
+  position:relative;
+  width:52px;height:52px;
+  flex:0 0 auto;
+  cursor:pointer;
+  border-radius:50%;
+  transition:transform .5s cubic-bezier(.2,.9,.3,1.2);
+}
+.ckc-dial:hover{transform:rotate(8deg) scale(1.04)}
+.ckc-dial.spin{animation:ckcSpin 1.1s cubic-bezier(.3,.8,.3,1)}
+@keyframes ckcSpin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+.ckc-dial svg{width:100%;height:100%;display:block}
+html[data-zc-theme="dark"] .ckc-disc{opacity:.85}
+.ckc-disc{
+  fill:none;
+  stroke:color-mix(in srgb, var(--ckc-tint, var(--accent)) 10%, transparent);
+  stroke-width:none;
+}
+.ckc-ring{fill:none;stroke:color-mix(in srgb, var(--ckc-tint, var(--accent)) 30%, var(--line-soft));stroke-width:1.6}
+.ckc-tick{
+  stroke:color-mix(in srgb, var(--ckc-tint, var(--accent)) 45%, transparent);
+  stroke-width:1;
+  opacity:.55;
+}
+.ckc-hub{
+  fill:color-mix(in srgb, var(--ckc-tint, var(--accent)) 65%, transparent);
+}
+.ckc-arc{
+  fill:none;
+  stroke:var(--ckc-tint, var(--accent));
+  stroke-width:3;
+  stroke-linecap:round;
+  filter:drop-shadow(0 0 4px color-mix(in srgb, var(--ckc-tint, var(--accent)) 60%, transparent));
+  transition:stroke .8s ease;
+}
+.ckc-hand{
+  transform-origin:24px 24px;
+  transition:transform 1s linear;
+}
+.ckc-hand .ckc-stem{
+  stroke:color-mix(in srgb, var(--ckc-tint, var(--accent)) 62%, transparent);
+  stroke-width:.9;
+  opacity:.55;
+}
+.ckc-glint{
+  fill:color-mix(in srgb, var(--ckc-tint, var(--accent)) 22%, transparent);
+}
+.ckc-hand .ckc-moon{
+  fill:color-mix(in srgb, var(--ckc-tint, var(--accent)) 62%, #fff);
+  filter:drop-shadow(0 0 5px color-mix(in srgb, var(--ckc-tint, var(--accent)) 65%, transparent));
+}
+.ckc-core{
+  fill:none;stroke:color-mix(in srgb, var(--ckc-tint, var(--accent)) 55%, transparent);
+  stroke-width:1;stroke-dasharray:2 3;opacity:.7;
+}
+
+/* ---------- 时间读数 ---------- */
+.ckc-read{display:flex;flex-direction:column;gap:2px;min-width:0}
+.ckc-clock{
+  display:flex;align-items:baseline;gap:1px;
+  font-family:var(--serif);font-variant-numeric:tabular-nums;
+  color:var(--text);line-height:1;
+}
+.ckc-clock .hh,.ckc-clock .mm{font-size:23px;font-weight:700;letter-spacing:.5px}
+.ckc-clock .sep{
+  font-size:21px;font-weight:700;opacity:.55;padding:0 1px;
+  animation:ckcBlink 2s steps(1) infinite;
+}
+@keyframes ckcBlink{0%,49%{opacity:.55}50%,100%{opacity:.22}}
+.ckc-clock .ss{
+  font-family:var(--sans);font-size:10.5px;font-weight:400;
+  color:var(--muted);margin-left:2px;letter-spacing:.6px;
+  font-variant-numeric:tabular-nums;
+  transform:translateY(-1px);
+}
+.ckc-meta{
+  display:flex;align-items:center;gap:8px;
+  font-size:10.5px;color:var(--muted);letter-spacing:.3px;
+  white-space:nowrap;
+}
+.ckc-phase{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:2px 8px;border-radius:999px;
+  color:color-mix(in srgb, var(--ckc-tint, var(--accent)) 78%, var(--text));
+  background:color-mix(in srgb, var(--ckc-tint, var(--accent)) 13%, transparent);
+  border:1px solid color-mix(in srgb, var(--ckc-tint, var(--accent)) 30%, transparent);
+  font-weight:600;
+}
+.ckc-phase i{
+  width:5px;height:5px;border-radius:50%;
+  background:var(--ckc-tint, var(--accent));
+  box-shadow:0 0 6px var(--ckc-tint, var(--accent));
+  animation:ckcBreath 2.6s ease-in-out infinite;
+}
+@keyframes ckcBreath{0%,100%{opacity:.45;transform:scale(.85)}50%{opacity:1;transform:scale(1.15)}}
+.ckc-prog{font-variant-numeric:tabular-nums}
+
+/* ---------- 24 小时色温轨道 ---------- */
+.ckc-ribbon{position:relative;min-width:0;cursor:crosshair}
+.ckc-track{
+  position:relative;
+  height:9px;border-radius:999px;
+  background:linear-gradient(90deg,
+    #6f6b8e 0%, #8f7f9c 8%, #d6a0ad 21%, #cf9f8f 30%,
+    #dcb87f 42%, #d3a97b 50%, #cb9a74 54%, #c28183 65%,
+    #bd7d80 71%, #a8809e 79%, #8a7a9b 88%, #6f6b8e 96%, #6f6b8e 100%);
+  box-shadow:inset 0 1px 2px rgba(255,255,255,.35), 0 1px 3px rgba(120,90,110,.12);
+  overflow:hidden;
+}
+html[data-zc-theme="dark"] .ckc-track{
+  box-shadow:inset 0 1px 2px rgba(255,255,255,.12), 0 1px 4px rgba(0,0,0,.3);
+  filter:saturate(1.05) brightness(1.05);
+}
+.ckc-future{
+  position:absolute;top:0;bottom:0;right:0;
+  background:var(--glass-strong);
+  opacity:.62;
+  transition:left 1s linear;
+}
+.ckc-mark{
+  position:absolute;top:50%;left:0;
+  width:13px;height:13px;
+  margin:-6.5px 0 0 -6.5px;
+  border-radius:50%;
+  background:radial-gradient(circle at 42% 38%, #fff, color-mix(in srgb, var(--ckc-tint, var(--accent)) 72%, #fff) 62%);
+  box-shadow:0 0 0 2px color-mix(in srgb, var(--ckc-tint, var(--accent)) 45%, transparent),
+    0 0 12px color-mix(in srgb, var(--ckc-tint, var(--accent)) 70%, transparent);
+  transition:left 1s linear;
+}
+.ckc-mark:after{
+  content:"";position:absolute;inset:-5px;
+  border-radius:50%;
+  border:1px solid color-mix(in srgb, var(--ckc-tint, var(--accent)) 50%, transparent);
+  animation:ckcRing 3.2s ease-out infinite;
+}
+@keyframes ckcRing{0%{transform:scale(.6);opacity:.85}75%{transform:scale(1.6);opacity:0}100%{opacity:0}}
+.ckc-ticks{
+  position:relative;height:12px;margin-top:2px;
+  display:flex;justify-content:space-between;
+  font-size:9px;color:var(--faint);letter-spacing:.4px;
+  font-variant-numeric:tabular-nums;
+}
+.ckc-ticks b{font-weight:400}
+.ckc-tip{
+  position:absolute;bottom:calc(100% + 6px);
+  transform:translateX(-50%);
+  padding:2px 7px;border-radius:999px;
+  font-size:10px;white-space:nowrap;
+  color:var(--text);background:var(--glass-strong);
+  border:1px solid var(--line);box-shadow:var(--shadow);
+  pointer-events:none;opacity:0;transition:opacity .15s ease;
+}
+.ckc-tip.on{opacity:1}
+
+/* ---------- 汐音的时辰台词 ---------- */
+.ckc-say{
+  margin:0;min-width:0;
+  font-size:11px;line-height:1.6;color:var(--muted);
+  display:flex;align-items:center;gap:6px;
+  padding-left:14px;
+  border-left:1px solid var(--line-soft);
+}
+.ckc-face{
+  width:26px;height:26px;flex:0 0 auto;
+  border-radius:50%;object-fit:cover;object-position:50% 18%;
+  border:1px solid color-mix(in srgb, var(--ckc-tint, var(--accent)) 35%, var(--line));
+  background:var(--glass-strong);
+  box-shadow:0 4px 10px -6px rgba(140,100,120,.6);
+}
+.ckc-say .q{
+  font-family:var(--serif);font-size:15px;line-height:1;
+  color:color-mix(in srgb, var(--ckc-tint, var(--accent)) 70%, transparent);
+  flex:0 0 auto;
+  transform:translateY(1px);
+}
+.ckc-say span:last-child{
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;
+}
+
+/* ---------- 整点：轻轻一击 ---------- */
+.ckc.strike{animation:ckcStrike 1.4s ease-out}
+@keyframes ckcStrike{
+  0%{box-shadow:var(--shadow)}
+  18%{box-shadow:var(--shadow), 0 0 0 1px color-mix(in srgb, var(--ckc-tint, var(--accent)) 40%, transparent),
+    0 0 26px -6px color-mix(in srgb, var(--ckc-tint, var(--accent)) 55%, transparent)}
+  100%{box-shadow:var(--shadow)}
+}
+
+/* ---------- 响应式 ---------- */
+@media (max-width:1180px){
+  .ckc{grid-template-columns:auto auto minmax(0,1fr);gap:14px}
+  .ckc-say{grid-column:1 / -1;padding-left:0;border-left:0;padding-top:2px}
+}
+@media (max-width:720px){
+  .ckc{grid-template-columns:auto minmax(0,1fr);gap:11px;padding:10px 13px 11px;margin-bottom:14px}
+  /* 手机上轨道不丢弃：单独占一行，换成细条，刻度与气泡省略 */
+  .ckc-ribbon{grid-column:1 / -1;padding-top:1px}
+  .ckc-ticks,.ckc-tip{display:none}
+  .ckc-track{height:9px}
+  .ckc-track .ckc-future{right:0}
+  .ckc-dial{width:40px;height:40px}
+  .ckc-clock .hh,.ckc-clock .mm{font-size:21px}
+  .ckc-meta{flex-wrap:wrap;gap:6px}
+  .ckc-say{font-size:10.5px}
+}
+
+/* ---------- 减弱动效 ---------- */
+@media (prefers-reduced-motion: reduce){
+  .ckc-dial,.ckc-dial.spin,.ckc-phase i,.ckc-mark:after,.ckc-clock .sep,.ckc.strike{animation:none !important}
+  .ckc-mark,.ckc-future,.ckc-hand,.ckc-arc{transition:none}
+}

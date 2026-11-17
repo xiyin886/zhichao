@@ -1,0 +1,275 @@
+/* ==========================================================================
+   知潮 · 常驻看板娘「汐音」（伪 Live2D 分层变换）
+   模块私有 class 前缀：zc-mascot-*
+   定位：默认左下浮动，可拖拽至视口内任意位置；
+   容器 z-index:80，低于 #chatOverlay(100) 模态遮罩；
+   容器本身 pointer-events:none，仅看板娘本体与按钮可交互。
+   ========================================================================== */
+
+.zc-mascot{
+  position:fixed;
+  left:18px;
+  bottom:calc(18px + env(safe-area-inset-bottom, 0px));
+  z-index:80;
+  width:172px;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:0;
+  pointer-events:none;
+  font-family:var(--sans);
+}
+
+/* ---------- 分层舞台 ---------- */
+.zc-mascot__stage{
+  position:relative;
+  width:150px;
+  aspect-ratio:1 / 1;
+  margin-left:6px;
+  pointer-events:auto;
+  cursor:grab;
+  transform-origin:50% 88%;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:none;
+}
+.zc-mascot__stage:active{
+  cursor:grabbing;
+}
+
+/* CSS 呼吸层：JS 不再逐帧写位移，避免与 CSS 动画打架 */
+.zc-mascot__bob{
+  position:absolute;
+  inset:0;
+  transform-origin:50% 88%;
+  animation:zcMascotBreath 3.6s ease-in-out infinite;
+}
+
+.zc-mascot__layer{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  pointer-events:none;
+  user-select:none;
+  -webkit-user-drag:none;
+}
+
+.zc-mascot__layer-back img,
+.zc-mascot__layer-body img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  display:block;
+}
+
+.zc-mascot__layer-back{
+  z-index:1;
+}
+.zc-mascot__layer-back img{
+  animation:zcMascotSway 4.8s ease-in-out infinite;
+  transform-origin:50% 18%;
+}
+
+.zc-mascot__layer-body{
+  z-index:2;
+}
+.zc-mascot__layer-body img{
+  filter:drop-shadow(0 12px 18px rgba(128, 88, 118, .28));
+}
+
+/* 点击弹跳：挂在独立内壳上，不影响 JS 写在外层的跟随变换 */
+.zc-mascot__pop{
+  position:absolute;
+  inset:0;
+}
+.zc-mascot__pop.bounce{
+  animation:zcMascotBounce .38s ease;
+}
+
+/* ---------- 关键帧 ---------- */
+@keyframes zcMascotBreath{
+  0%,100%{ transform:translateY(0) scale(1); }
+  50%{ transform:translateY(-3px) scale(1.012); }
+}
+@keyframes zcMascotSway{
+  0%,100%{ transform:translateX(0) rotate(-1.2deg); }
+  50%{ transform:translateX(2px) rotate(1.2deg); }
+}
+@keyframes zcMascotBounce{
+  0%{ transform:scale(1); }
+  35%{ transform:scale(.93); }
+  70%{ transform:scale(1.04); }
+  100%{ transform:scale(1); }
+}
+
+/* ---------- 气泡台词 + 表情 ---------- */
+.zc-mascot__bubble{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  max-width:232px;
+  margin:0 0 8px 10px;
+  padding:9px 13px;
+  background:var(--glass-strong);
+  -webkit-backdrop-filter:blur(16px) saturate(1.25);
+  backdrop-filter:blur(16px) saturate(1.25);
+  border:1px solid var(--line);
+  border-radius:16px;
+  box-shadow:var(--shadow-lift);
+  opacity:0;
+  transform:translateY(6px) scale(.96);
+  transform-origin:bottom left;
+  transition:opacity .18s ease, transform .18s ease;
+}
+.zc-mascot__bubble.on{
+  opacity:1;
+  transform:none;
+}
+.zc-mascot__face{
+  flex:0 0 auto;
+  width:38px;
+  height:38px;
+  object-fit:contain;
+}
+.zc-mascot__bubble-text{
+  font-size:12.5px;
+  line-height:1.55;
+  color:var(--text);
+  letter-spacing:.2px;
+}
+
+/* ---------- 操作按钮 ---------- */
+.zc-mascot__actions{
+  display:flex;
+  gap:8px;
+  margin:4px 0 0 8px;
+  pointer-events:auto;
+}
+.zc-mascot__btn{
+  min-width:40px;
+  min-height:40px;
+  padding:0 12px;
+  border-radius:14px;
+  border:1px solid var(--line);
+  background:var(--glass-strong);
+  -webkit-backdrop-filter:blur(12px);
+  backdrop-filter:blur(12px);
+  color:var(--accent-deep);
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  box-shadow:var(--shadow);
+  transition:transform .15s ease, background .15s ease, border-color .15s ease, color .15s ease;
+}
+.zc-mascot__btn:hover{
+  transform:translateY(-2px);
+  border-color:var(--accent);
+  background:var(--accent-soft);
+}
+.zc-mascot__btn:active{
+  transform:translateY(0) scale(.96);
+}
+.zc-mascot__btn svg{
+  width:19px;
+  height:19px;
+  display:block;
+}
+.zc-mascot__btn-label{
+  font-size:12px;
+  letter-spacing:.3px;
+}
+
+/* ---------- 收起态：小头像 ---------- */
+.zc-mascot__avatar{
+  pointer-events:auto;
+  width:64px;
+  height:64px;
+  border-radius:50%;
+  border:1px solid var(--line);
+  background:var(--glass-strong);
+  -webkit-backdrop-filter:blur(12px);
+  backdrop-filter:blur(12px);
+  box-shadow:var(--shadow-lift);
+  cursor:grab;
+  overflow:hidden;
+  padding:0 0 4px;
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:none;
+}
+.zc-mascot__avatar:active{
+  cursor:grabbing;
+}
+.zc-mascot__avatar img{
+  width:86%;
+  height:auto;
+  object-fit:contain;
+  pointer-events:none;
+}
+
+.zc-mascot.is-collapsed .zc-mascot__stage,
+.zc-mascot.is-collapsed .zc-mascot__actions,
+.zc-mascot.is-collapsed .zc-mascot__bubble{
+  display:none;
+}
+.zc-mascot:not(.is-collapsed) .zc-mascot__avatar{
+  display:none;
+}
+
+/* ---------- 动效开关 / 降级 ---------- */
+.zc-mascot--static .zc-mascot__bob,
+.zc-mascot--static .zc-mascot__layer-back img,
+.zc-mascot--static .zc-mascot__pop.bounce{
+  animation:none !important;
+}
+
+/* ---------- 移动端 ---------- */
+@media (max-width:720px){
+  .zc-mascot{
+    left:12px;
+    bottom:calc(12px + env(safe-area-inset-bottom, 0px));
+    width:124px;
+  }
+  .zc-mascot__stage{
+    width:112px;
+    margin-left:2px;
+  }
+  .zc-mascot__bubble{
+    max-width:200px;
+    margin-left:4px;
+    padding:8px 11px;
+  }
+  .zc-mascot__face{
+    width:32px;
+    height:32px;
+  }
+  .zc-mascot__bubble-text{
+    font-size:12px;
+  }
+  .zc-mascot__actions{
+    margin-left:4px;
+  }
+  .zc-mascot__btn{
+    min-width:40px;
+    min-height:40px;
+    padding:0 10px;
+  }
+}
+
+/* ---------- 减弱动效偏好 ---------- */
+@media (prefers-reduced-motion: reduce){
+  .zc-mascot__bob,
+  .zc-mascot__layer-back img,
+  .zc-mascot__pop.bounce{
+    animation:none !important;
+  }
+  .zc-mascot__bubble,
+  .zc-mascot__btn,
+  .zc-mascot__avatar{
+    transition:none;
+  }
+}

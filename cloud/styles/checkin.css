@@ -1,0 +1,364 @@
+/* ==========================================================================
+   知潮 · 汐音的星月手账（每日打卡）
+   ------------------------------------------------------------------------
+   模块私有 class 前缀 ck-*，不改动既有选择器；
+   视觉语言沿用站点莫兰迪粉紫 + 磨砂玻璃 + 星星/月牙/星轨装饰；
+   z-index 仅在卡内使用 0–6，不与看板娘(80)、聊天(100)、设置(7000) 冲突；
+   全部动画在 @media (prefers-reduced-motion: reduce) 下关闭（站点另有全局兜底）。
+   ========================================================================== */
+
+/* ---------- 卡片底：月光渗透 ---------- */
+.ck-card{
+  position:relative;
+  overflow:hidden;
+  text-align:center;
+  padding-bottom:15px;
+  background:
+    radial-gradient(150% 108% at 50% -26%, rgba(190,150,175,.26), transparent 64%),
+    radial-gradient(96% 86% at 88% 118%, rgba(125,134,163,.18), transparent 70%),
+    var(--glass);
+  transition:box-shadow .35s ease, border-color .35s ease;
+}
+html[data-zc-theme="dark"] .ck-card{
+  background:
+    radial-gradient(150% 108% at 50% -26%, rgba(200,150,175,.22), transparent 64%),
+    radial-gradient(96% 86% at 88% 118%, rgba(130,140,185,.16), transparent 70%),
+    var(--glass);
+}
+
+/* ---------- 背景细碎星光 ---------- */
+.ck-sky{position:absolute;inset:0;pointer-events:none;z-index:0}
+.ck-sky i{
+  position:absolute;width:3px;height:3px;border-radius:50%;
+  background:var(--accent-2);opacity:.30;
+  box-shadow:0 0 6px color-mix(in srgb,var(--accent-2) 70%, transparent);
+  animation:ckTwinkle 5.2s ease-in-out infinite;
+}
+.ck-sky i:nth-child(1){left:11%;top:16%;animation-delay:0s}
+.ck-sky i:nth-child(2){left:26%;top:9%;animation-delay:.9s;width:2px;height:2px}
+.ck-sky i:nth-child(3){left:78%;top:12%;animation-delay:1.8s}
+.ck-sky i:nth-child(4){left:88%;top:26%;animation-delay:2.6s;width:2px;height:2px}
+.ck-sky i:nth-child(5){left:16%;top:34%;animation-delay:3.4s;width:2px;height:2px}
+.ck-sky i:nth-child(6){left:66%;top:5%;animation-delay:4.2s}
+@keyframes ckTwinkle{
+  0%,100%{opacity:.16;transform:scale(.85)}
+  50%{opacity:.62;transform:scale(1.15)}
+}
+
+/* ---------- 头部：标题 + 连击药丸 ---------- */
+.ck-head{
+  position:relative;z-index:2;
+  display:flex;align-items:center;gap:8px;
+  margin:0 0 8px;
+}
+.ck-head h3{
+  margin:0;
+  display:flex;align-items:center;gap:7px;
+  font-family:var(--serif);font-size:13.5px;font-weight:700;letter-spacing:.6px;
+  color:var(--text);
+}
+.ck-head h3 svg{color:var(--accent);flex:0 0 auto}
+.ck-pill{
+  margin-left:auto;
+  display:inline-flex;align-items:center;gap:3px;
+  padding:3px 9px;border-radius:999px;
+  font-family:var(--sans);font-size:10px;letter-spacing:.2px;white-space:nowrap;
+  color:var(--accent-deep);
+  background:var(--accent-soft);
+  border:1px solid color-mix(in srgb,var(--accent) 34%, transparent);
+}
+.ck-pill b{
+  font-family:var(--serif);font-size:12.5px;font-weight:700;
+  font-variant-numeric:tabular-nums;
+}
+.ck-pill.pop{animation:ckPop .55s cubic-bezier(.2,.9,.3,1.5)}
+@keyframes ckPop{
+  0%{transform:scale(.62);opacity:.35}
+  58%{transform:scale(1.14)}
+  100%{transform:scale(1);opacity:1}
+}
+
+/* ---------- 舞台：汐音 + 对话泡 ---------- */
+.ck-stage{
+  position:relative;z-index:2;
+  display:flex;flex-direction:column;align-items:center;
+}
+.ck-aura{
+  position:absolute;left:50%;top:36%;
+  width:158px;height:158px;margin:-79px 0 0 -79px;
+  border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle, rgba(190,150,175,.34), transparent 68%);
+  transition:transform .5s ease,opacity .5s ease;
+}
+.ck-card.checked .ck-aura{
+  transform:scale(1.12);
+  background:radial-gradient(circle, rgba(206,160,182,.42), transparent 70%);
+}
+.ck-chibi{
+  position:relative;
+  display:block;width:94px;height:auto;margin:0 auto;
+  object-fit:contain;
+  filter:drop-shadow(0 10px 16px rgba(120,80,100,.22));
+  animation:ckFloat 5.6s ease-in-out infinite;
+  transition:transform .25s ease;
+  will-change:transform;
+}
+.ck-chibi:hover{transform:translateY(-4px) scale(1.03)}
+.ck-chibi.hop{animation:ckHop .62s cubic-bezier(.3,1.4,.4,1)}
+@keyframes ckFloat{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-6px)}
+}
+@keyframes ckHop{
+  0%{transform:translateY(0) scale(1)}
+  32%{transform:translateY(-13px) scale(1.07)}
+  62%{transform:translateY(2px) scale(.96)}
+  82%{transform:translateY(-3px) scale(1.01)}
+  100%{transform:translateY(0) scale(1)}
+}
+
+.ck-bubble{
+  position:relative;z-index:3;
+  margin:2px 0 0;
+  padding:7px 12px;
+  min-height:32px;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:14px;
+  background:var(--glass-strong);
+  border:1px solid var(--line);
+  box-shadow:0 8px 20px -18px rgba(126,104,128,.7);
+  font-size:11px;line-height:1.62;letter-spacing:.2px;color:var(--text);
+  transition:background .3s ease, border-color .3s ease;
+}
+.ck-bubble:before{
+  content:"";position:absolute;left:50%;top:-5px;
+  width:9px;height:9px;
+  transform:translateX(-50%) rotate(45deg);
+  background:var(--glass-strong);
+  border-left:1px solid var(--line);
+  border-top:1px solid var(--line);
+  border-radius:3px 0 0 0;
+}
+.ck-say{display:inline}
+.ck-say.typing:after{
+  content:"";display:inline-block;
+  width:1px;height:10px;margin-left:2px;
+  vertical-align:-1px;
+  background:var(--accent);
+  animation:ckCaret .9s steps(1) infinite;
+}
+@keyframes ckCaret{0%,49%{opacity:.8}50%,100%{opacity:0}}
+
+/* ---------- 星轨：最近 14 天 ---------- */
+.ck-trail-wrap{position:relative;z-index:2}
+.ck-axis{
+  display:flex;justify-content:space-between;
+  padding:0 3px;margin:1px 0 8px;
+  font-size:9px;letter-spacing:.6px;color:var(--faint);
+  opacity:.85;
+}
+.ck-trail{
+  position:relative;z-index:2;
+  display:grid;grid-template-columns:repeat(14,minmax(0,1fr));
+  align-items:center;
+  margin:14px 0 0;padding:1px 2px;
+}
+.ck-trail:before{
+  content:"";position:absolute;left:5%;right:5%;top:50%;height:1px;
+  transform:translateY(-50%);
+  background:linear-gradient(90deg,
+    transparent,
+    color-mix(in srgb,var(--accent) 34%, transparent) 10%,
+    color-mix(in srgb,var(--accent) 34%, transparent) 90%,
+    transparent);
+  opacity:.85;
+}
+.ck-star{
+  position:relative;
+  display:grid;place-items:center;
+  height:17px;
+  border:0;background:none;padding:0;
+  pointer-events:none;
+  -webkit-tap-highlight-color:transparent;
+}
+.ck-star svg{
+  width:12px;height:12px;
+  fill:currentColor;stroke:none;
+  color:var(--faint);
+  opacity:.42;
+  transform:scale(.88);
+  transition:color .35s ease,opacity .35s ease,transform .35s ease;
+  pointer-events:none;
+}
+.ck-star.on svg{
+  color:var(--accent);
+  opacity:1;
+  transform:scale(1.1);
+  filter:drop-shadow(0 0 6px color-mix(in srgb,var(--accent) 72%, transparent));
+}
+.ck-star.today svg{
+  transform:scale(1.16);
+  opacity:.7;
+  color:var(--muted);
+}
+.ck-star.today.on svg{
+  color:var(--accent-deep);
+  transform:scale(1.32);
+  filter:drop-shadow(0 0 8px color-mix(in srgb,var(--accent-deep) 62%, transparent));
+}
+.ck-star.now{
+  cursor:pointer;
+  pointer-events:auto;
+}
+.ck-star.now svg{
+  color:var(--accent);
+  opacity:.92;
+  transform:scale(1.34);
+  filter:drop-shadow(0 0 5px color-mix(in srgb,var(--accent) 55%, transparent));
+}
+.ck-star.now:after{
+  content:"";position:absolute;left:50%;top:50%;
+  width:19px;height:19px;margin:-9.5px 0 0 -9.5px;
+  border-radius:50%;
+  border:1.5px solid color-mix(in srgb,var(--accent) 72%, transparent);
+  animation:ckPulse 2.6s ease-out infinite;
+  pointer-events:none;
+}
+@keyframes ckPulse{
+  0%{transform:scale(.55);opacity:.9}
+  72%{transform:scale(1.55);opacity:0}
+  100%{opacity:0}
+}
+.ck-star.now:hover svg{color:var(--accent-deep);opacity:1;transform:scale(1.45)}
+.ck-star.bloom svg{animation:ckBloom .85s cubic-bezier(.2,.9,.3,1.45) both}
+@keyframes ckBloom{
+  0%{transform:scale(.35) rotate(-34deg);opacity:.25}
+  55%{transform:scale(1.55) rotate(9deg);opacity:1}
+  100%{transform:scale(1.32) rotate(0);opacity:1}
+}
+
+/* ---------- 说明行 ---------- */
+.ck-meta{
+  position:relative;z-index:2;
+  margin:0 0 11px;
+  min-height:17px;
+  font-size:10.5px;line-height:1.6;letter-spacing:.2px;
+  color:var(--muted);
+  font-variant-numeric:tabular-nums;
+}
+.ck-meta em{font-style:normal;color:var(--accent-deep)}
+
+/* ---------- 打卡按钮 ---------- */
+.ck-btn{
+  position:relative;z-index:2;
+  width:100%;min-height:44px;
+  padding:0 14px;
+  border:0;border-radius:14px;
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  background:var(--grad-accent);color:#fff;
+  font-family:var(--sans);font-size:12.5px;font-weight:600;letter-spacing:1px;
+  cursor:pointer;overflow:hidden;
+  box-shadow:var(--glow-accent);
+  transition:transform .18s ease,filter .18s ease,box-shadow .18s ease,
+    background .3s ease,color .3s ease,border-color .3s ease;
+}
+.ck-btn svg{width:15px;height:15px;flex:0 0 auto}
+.ck-btn:hover{filter:brightness(1.06);transform:translateY(-1px)}
+.ck-btn:active{transform:translateY(0) scale(.985)}
+.ck-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* 未打卡：光泽扫过，暗示「可以按」 */
+.ck-btn:before{
+  content:"";position:absolute;top:-45%;left:-32%;
+  width:26%;height:190%;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);
+  transform:skewX(-18deg);
+  animation:ckShine 4.4s ease-in-out infinite;
+}
+@keyframes ckShine{
+  0%,70%{left:-34%}
+  86%,100%{left:116%}
+}
+/* 已打卡：变成手账上的虚线印记 */
+.ck-btn.done{
+  background:var(--glass-strong);
+  color:var(--accent-deep);
+  border:1px dashed color-mix(in srgb,var(--accent) 48%, transparent);
+  box-shadow:none;
+  letter-spacing:.4px;
+  font-weight:500;
+}
+.ck-btn.done:before{display:none}
+.ck-btn.done:hover{filter:none;transform:none}
+.ck-btn.done:active{transform:scale(.99)}
+
+/* ---------- 打卡瞬间：星屑迸发 + 月光闪 ---------- */
+.ck-flash{
+  position:absolute;inset:0;z-index:1;
+  pointer-events:none;overflow:hidden;
+}
+.ck-p{
+  position:absolute;left:50%;top:40%;
+  font-size:13px;line-height:1;
+  color:var(--accent-deep);
+  text-shadow:0 0 8px rgba(255,233,244,.9);
+  opacity:0;
+  will-change:transform,opacity;
+  animation:ckBurst var(--dur,1s) cubic-bezier(.2,.7,.3,1) var(--dl,0s) forwards;
+}
+@keyframes ckBurst{
+  0%{opacity:0;transform:translate(-50%,-50%) rotate(var(--r,0deg)) translateY(0) scale(.3)}
+  14%{opacity:1;transform:translate(-50%,-50%) rotate(var(--r,0deg)) translateY(calc(var(--d,-70px) * -.12)) scale(var(--s,1))}
+  72%{opacity:.9}
+  100%{opacity:0;transform:translate(-50%,-50%) rotate(var(--r,0deg)) translateY(var(--d,-70px)) scale(calc(var(--s,1) * .8))}
+}
+.ck-card.flash:after{
+  content:"";position:absolute;inset:0;z-index:4;
+  pointer-events:none;
+  background:radial-gradient(circle at 50% 34%, rgba(255,236,245,.62), transparent 64%);
+  animation:ckLight 1.05s ease-out forwards;
+}
+@keyframes ckLight{
+  0%{opacity:0}
+  22%{opacity:.95}
+  100%{opacity:0}
+}
+
+/* ---------- 里程碑：整卡泛金 ---------- */
+.ck-card.milestone{
+  border-color:color-mix(in srgb,var(--gold) 42%, var(--line));
+  box-shadow:var(--shadow), 0 0 0 1px color-mix(in srgb,var(--gold) 34%, transparent),
+    0 18px 40px -28px color-mix(in srgb,var(--gold) 60%, transparent);
+  animation:ckGold 2.6s ease-out 1;
+}
+@keyframes ckGold{
+  0%{filter:saturate(1)}
+  35%{filter:saturate(1.35) brightness(1.04)}
+  100%{filter:none}
+}
+.ck-card.milestone .ck-pill{
+  color:#8a6f43;
+  background:color-mix(in srgb,var(--gold) 16%, transparent);
+  border-color:color-mix(in srgb,var(--gold) 50%, transparent);
+}
+
+/* ---------- 窄屏 ---------- */
+@media (max-width:720px){
+  .ck-chibi{width:88px}
+  .ck-btn{min-height:46px}
+}
+
+/* ---------- 减弱动效 ---------- */
+@media (prefers-reduced-motion: reduce){
+  .ck-sky i,
+  .ck-chibi,
+  .ck-chibi.hop,
+  .ck-star.now:after,
+  .ck-star.bloom svg,
+  .ck-btn:before,
+  .ck-pill.pop,
+  .ck-card.flash:after,
+  .ck-card.milestone{
+    animation:none !important;
+  }
+  .ck-p{display:none}
+}
