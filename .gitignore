@@ -1,6 +1,6 @@
 # 本地项目记忆与工作数据，不随仓库提交
 .workbuddy/
 .data/
-.backups/
-.docs/
+backups/
+
 
