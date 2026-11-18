@@ -4,6 +4,110 @@
 
 ---
 
+## 2026-11-18 12:41（Asia/Shanghai）｜翻页音效音量提升约 3 倍
+
+- **变更类型**：前端部署（index.html + changelog，无新素材文件）
+- **触发原因**：用户反馈纸张沙沙声音量太小，几乎听不见。
+- **改动清单**（均乘设置里的 `sfxVolume`，默认 0.9）：
+  1. `SFX.flip` 峰值 0.085 → 0.26（时长 0.45s 不变）。
+  2. `SFX.landing` 峰值 0.055 → 0.16，时长 0.28 → 0.30s。
+  3. 拖动引擎上限 `0.1*level()` → `0.3*level()`，速度系数 `speed*0.012` → `speed*0.032`；静止仍归零，松手收声逻辑不变。
+- **部署**：服务器备份 `/opt/zhichao-backups/20261118-1241/`（index.html、index.html.gz、两处 changelog）→ scp 覆盖 → `gzip -9` 重生成并 `gzip -t` 通过。
+- **校验**：本机与线上 index.html / .gz / changelog 逐项 md5 一致；首页 200 且命中 `rustle(at0(), .45, .26`；匿名 `/data/` 401。
+- **验证方式**：本地预览实测点击翻页 flipping→read、真实 CDP 拖拽 user_fold→read 且 landing 触发；`sfxVolume=0.5 / 0.9` 与 `sfx=false` 三条路径均无报错。
+
+---
+
+## 2026-11-18 12:13（Asia/Shanghai）｜翻页音效重做：真实纸张沙沙声 + 拖动音效
+
+- **变更类型**：前端部署（index.html + changelog，无新素材文件）
+- **触发原因**：用户反馈 10:43 上线的翻页音效太难听（带通扫频产生哨音感），且拖动纸页时没有声音、不符合物理逻辑。
+- **改动清单**：
+  1. SFX 内部新增 `rustle(at,dur,gain,cutoff)`：噪声先乘随机台阶式包络（每 18~44ms 换一个 0.22~1 的起伏），再走高通 1800 + 带通 3400（Q .7），去掉所有频率扫频与闷响，输出干净的纸面沙沙声。
+  2. 新增拖动引擎 `drag`：2s 循环白噪声 → 高通 2000 → 带通 3600（Q .8）→ 增益；rAF 逐帧读取 `PF.flipController.calc.getPosition()`，按帧间位移欧氏距离算 speed，`gain=min(.1, speed*.012)`，setTargetAtTime(.05) 平滑；每 8 帧带通中心在 3000~4600 随机抖动；speed=0 自动收声。
+  3. 公开方法 `flip/landing/dragStart/dragStop`；mountBook 内 changeState 带 prevState 做完整状态机：flipping→flip；user_fold/fold_corner→dragStart；read→dragStop，且拖动态释放时追加 landing（含拖回取消的情况）。
+  4. logDlg 监听 close 事件调 dragStop，关闭按钮/Esc 中途关闭都不会留下空转 rAF。
+- **部署**：服务器备份 `/opt/zhichao-backups/20261118-1213/`（index.html、index.html.gz、两处 changelog）→ scp 覆盖 → `gzip -9` 重生成并 `gzip -t` 通过。
+- **校验**：本机与线上 index.html / .gz / changelog 逐项 md5 一致；首页 200、命中 rustle；匿名 `/data/` 401；changelog 122 条、updatedAt 2026-11-18T12:13:00+08:00。
+- **验证方式**：本地预览实测——点击翻页 flip 调用 1 次（flipping→read）；CDP 真实拖动时增益随速度升到 0.09、停住归零、松手 read+landing；跨书脊翻页成功、小幅拖动正确取消；拖动中 Esc 关闭无报错。
+
+---
+
+## 2026-11-18 10:43（Asia/Shanghai）｜手账翻页音效上线
+
+- **变更类型**：前端部署（index.html + changelog，无新素材文件）
+- **触发原因**：用户反馈更新日志翻书时没有翻页声。
+- **改动清单**：
+  1. SFX 模块新增 `flip()`：用白噪声经带通滤波（1500→480Hz 扫频）+ 起页高频轻擦（hush, 3200）+ 落页 196Hz 闷响，合成 0.42s 纸页沙沙声，长度贴着 700ms 翻页动画。
+  2. `mountBook()` 内监听 StPageFlip 的 `changeState` 事件，进入 `flipping` 状态即调用 `SFX.flip()`；覆盖边缘热区、← → 键、触屏滑动，每次翻页只触发一次（埋点验证 calls=1/flip）。
+  3. 复用既有开关：`settings.sfx=false` 或音量 0 时自动静音，不报错。
+- **部署**：服务器备份 `/opt/zhichao-backups/20261118-1043/`（index.html、index.html.gz、两处 changelog）→ scp 覆盖 → `gzip -9` 重生成并 `gzip -t` 通过。
+- **校验**：本机与线上 index.html / .gz / changelog 逐项 md5 一致；`http://127.0.0.1/` 200 且命中 `SFX.flip`；匿名 `/data/` 401；changelog 121 条、updatedAt 2026-11-18T10:43:00+08:00。
+- **验证方式**：本地预览（8811）实测热区点击与方向键触发 changeState 序列 flipping→read，音效调用计数正确、无控制台报错；关闭 sfx 路径安全。
+
+---
+
+## 2026-11-17 13:10（Asia/Shanghai）｜本地与云端全量对账并统一 .gz 副本
+
+- **变更类型**：文件同步 / 运维对账（无站点内容变更，changelog.json 不新增条目）
+- **触发原因**：用户要求同步本地与云端。
+- **对账结果**：本地 `cloud/` 与云端 `/opt/zhichao/` 逐文件 md5 比对——104 个同名文件**内容全部一致**（含 index.html、js、styles、assets、data、运维脚本）；差异仅两类：
+  1. 本地 3 个 `.gz` 副本已过期（`data/changelog.json.gz`、`data/current.json.gz`、`js/mascot.js.gz`），解压后与源文件不一致。
+  2. 云端独有 `styles/clock.css.gz`，本地缺失。
+- **处理**：本地用 `gzip -9 -n` 重新生成全部 11 个 `.gz`（去掉时间戳与文件名，保证两端字节一致），补出缺失的 `styles/clock.css.gz`，整套 scp 覆盖云端并 `chown 1234:1234` / `chmod 644`。
+- **备份**：云端旧 `.gz` 已备份至 `/opt/zhichao-backups/20261117-1310/`。
+- **校验**：两端 11 个 `.gz` 解压后与各自源文件 md5 全部匹配（11/11 OK）；全量对账 104 文件一致、0 处内容不一致；`http://127.0.0.1/` 200、`Accept-Encoding: gzip` 的 js 200、匿名 `/data/` 401。
+- **说明**：`cloud/assets/book-cover.webp`（改版前的旧封面）仅保留在本地作素材备份，未上传，属预期差异。
+
+---
+
+## 2026-11-17 13:02（Asia/Shanghai）｜页码改为只标正文，封面封底不显示
+
+- **变更类型**：前端部署（index.html + changelog），本机与线上同步
+- **触发原因**：用户要求页码只覆盖正文范围（内容第一页 → 最后一页），封面/封底不要出现页码。
+- **改动清单**：
+  1. `buildPages()` 尾部新增正文编号：遍历 `front` 与 `content` 页，赋予 `page.no`（从 1 起算），并写入 `BOOK.bodyTotal`；封面 `art`、题名 `title`、`colophon`、封底 `back` 不参与编号。
+  2. `pageNoHTML(no)` 改为按 `page.no / BOOK.bodyTotal` 输出，深度色/右下角等变体分支及对应 CSS（`.bk-pageno.dark`、`.bk-pageno.corner`）一并删除。
+  3. `renderSheet()` 仅 `front` 与 `content` 追加页码，其余四类页面不输出。
+  4. 目录「第 N 页」改用同一套正文编号（原为物理页序号 idx+1），保证目录页码与正文页码一致。
+- **部署**：服务器备份 `/opt/zhichao-backups/20261117-1302/` → scp 覆盖 index.html、index.html.gz、两处 changelog → `gzip -9` 重生成并 `gzip -t` 通过。
+- **校验**：本机与线上 index.html / .gz / changelog 逐项 md5 一致；`http://127.0.0.1/` 200 且命中 `BOOK.bodyTotal`；匿名 `/data/` 401；changelog 120 条、updatedAt 2026-11-17T13:02:00+08:00。
+- **验证方式**：本机预览逐页断言——`art/title/colophon/back` 无 `.bk-pageno`，`front` 为 1/26，末页 content 为 26/26；目录五个日期页码（2/9/17/23/25）与正文一致。
+
+---
+
+## 2026-11-17 12:58（Asia/Shanghai）｜手账页码移入书页 + 修复向后翻页失效
+
+- **变更类型**：前端部署（index.html + 翻页库补丁 + changelog）
+- **触发原因**：用户要求取消书外底部悬浮的「‹ N / 28 ›」翻页按钮，把页码直接印在每张书页的页尾。
+- **改动清单**：
+  1. 删除 `.book-foot` 整块标记（bkPrev/bkPage/bkNext）与对应 CSS；`.book-wrap` 下边距 42px 收回为 12px。
+  2. 新增 `.bk-pageno`（页尾居中、衬线小字）：纸张页用浅灰梅色，深色页用浅色字 + 暗部阴影；封底加 `.corner` 放右下角，避开居中落款块。
+  3. JS 新增 `pageNoHTML(index,dark,corner)`，`renderSheet(el,page,index)` 五类特殊页与内容页统一追加页码；`sheetFor` 透传 map 下标；删除 `updateFoot` 及其全部调用与 bkPrev/bkNext 绑定。
+  4. **顺带修复**：排查中发现 `PF.flipPrev()` 在当前布局下完全失效（左边缘热区、左方向键同受影响）。根因是库内 `flipPrev` 把点击点写死为 `x:10`，未加书体左偏移（本布局 left=12），`isPointOnCorners` 判定点落在书页外而拦截。已给 `cloud/js/page-flip.min.js` 打补丁：x 改为 `getRect().left+10`，y 按 `getRect().top` 修正；引用版本号 `?v=20261117d` → `e`。
+- **部署**：服务器备份 `/opt/zhichao-backups/20261117-1258/`（index.html、index.html.gz、page-flip.min.js、两处 changelog）→ scp 覆盖 → `gzip -9` 重生成并 `gzip -t` 通过 → changelog 同写 memory 卷权威路径与站点备份路径（md5 一致）。
+- **校验**：本机与线上 index.html / .gz / page-flip.min.js / changelog 逐项 md5 一致；`http://127.0.0.1/` 200 且命中 `.bk-pageno`；补丁在服务端文件中可检索；匿名 `/data/` 401（鉴权正常）。
+- **验证方式**：本机 `dev/preview_server.py 8811` 实测 28 页页码全部正确（1/28–28/28），公共 API/方向键/边缘热区三条向后翻页路径均恢复，标记重要重渲染后页码不丢失，控制台无报错。
+
+---
+
+## 2026-11-17 12:45（Asia/Shanghai）｜手账翻书改版：对开封面 / 封底 / 取消点空白退出
+
+- **变更类型**：前端部署（index.html + 3 张新插画素材 + changelog）
+- **触发原因**：用户反馈 ① 翻书第一页左侧空白难看，要求重做封面；② 翻第一页时书脊有缝；③ 点书页外空白（以及聊天页、热点详情页等）会误关弹层。封面插画由用户从生成稿中选定（前封面：御姐捏脸教训萝莉、少女写手账；封底：萝莉撒纸被拎住）。
+- **基线说明**：本机 `cloud/index.html` 与线上版本存在分叉（线上早已把封面图换成 `group-xiyin-home.webp`，本机仍是旧 `book-cover.webp`）。为避免覆盖线上改动，**以服务器线上版本为基线重新落地全部改动**，改前的本机副本存 `backups/index-before-cover-redesign-20261117-1240.html`。
+- **改动清单**：
+  1. 首屏：删除 `.book.is-cover::before/::after` 假左半封面遮罩；`pages` 由 `[cover, front]` 改为 `[art, title, front]`；StPageFlip `showCover:false`、去掉首张 `data-density=hard`；`.book` 补深梅底色，消除奇偶页/动画途中露底。
+  2. 封面：左页 `assets/book-cover-art.webp`（含 760w `-sm` 版走 srcset）+ 竖排落款 + 月牙印章；右页题名页（金线细框、星点、巨月暗纹、竖排 2026、条数/日期/提示）。
+  3. 封底：末页 `assets/book-cover-back.webp` + 一句落款；总页数为奇数时自动插一页「落款页」，保证封底永远落在右页。
+  4. 弹层：移除 `trashDlg / delDlg / shareDlg / reader / logDlg / chatOverlay` 六处「点背景关闭」监听，仅保留关闭按钮（dialog 与聊天窗仍可 Esc 退出）。
+- **素材**：`assets-source/cover/handbook-cover-scene-20261117.jpg`、`handbook-back-scene-20261117.jpg`（原始 1536×1536）；站点用 1200×1200 webp（84/84）+ 760×760 sm（82）。原 `book-cover.webp` 保留未删。
+- **部署**：服务器备份 `/opt/zhichao-backups/20261117-1252/`（index.html、index.html.gz、两处 changelog）→ scp 覆盖 → `gzip -9` 重生成 `.gz` 并 `gzip -t` 通过 → changelog 同写 `/opt/zhichao-memory/data/changelog.json`（权威）与 `/opt/zhichao/data/changelog.json`（备份，两份 md5 一致）。
+- **校验**：本机与线上 `index.html` / `.gz` / 3 张素材 / changelog 逐项 md5 一致；`http://127.0.0.1/` 200、页面命中新样式类；匿名访问 `/assets/*` 仍 401（鉴权正常）。
+- **验证方式**：本机 `dev/preview_server.py 8811` 实测首屏对开（无左空白、无书脊缝）、翻页连续帧、封底与落款页、以及手账/聊天/热点详情三处「点空白不退出」。
+
+---
+
 ## 2026-11-16 18:37（Asia/Shanghai）｜定时任务迁移
 
 - **变更类型**：定时任务归属对话迁移（等价重建，非规则变更）
@@ -512,3 +616,141 @@
   - 新增日志条目后 `changelog.json`（111 条）同时写入容器 `/data` 与站点 `/opt/zhichao/data/changelog.json`，MD5 `1ee8688e9a8ed134e376a45ca59d58de` 一致。
 - **备份位置**：服务器 `/opt/zhichao-backups/20261117-1108/`（`server.py`、`default.conf`、`changelog.json`）；本机 `backups/server-live-before-changelog-*.py`、`backups/nginx-local-*.conf`。
 - **部署规则变更（重要）**：今后改更新日志**必须写 `/opt/zhichao-memory/data/changelog.json`**（线上实际读取那份），只改站点副本不会生效、并会在下次部署覆盖网页标记；部署新日志前先拉取容器当前文件合并，保留 `important` 字段。
+
+---
+
+## 2026-11-17 11:26（Asia/Shanghai）｜更新日志改成可翻的书（封面 + 按天分页）
+
+- **变更类型**：站点前端改版（`cloud/index.html`，未改 server.py / nginx）
+- **需求**：更新日志做成翻书，带封面与二次元元素；按天分页，一天内容多可占多页，不同日期不共页。
+- **选型**：没有引入 turn.js / stPageFlip 这类外部库，直接用 CSS 3D + DOM 测量自研。原因：站点要控体积且不依赖外网，日志数据结构（按天分组 + 星标按钮）需要与分页深度耦合，套现成库反而要改造它的翻页模型。
+- **分页算法**（`buildPages`）：
+  - 按 `at` 日期分组、倒序；**每个日期强制新开一页**，同一天条目超出页高才续页，续页重新画日期头并标「续」，因此不同日期永远不会同页。
+  - 用隐藏测量容器 `#logMeasure`（宽度 = 纸面宽 - padding、字体一致）逐条 `append → getBoundingClientRect().height → remove`，累加高度对比预算 `纸高 - 72px` 切页，避免估算误差导致溢出。
+  - 生成日期目录（`BOOK.toc`），扉页列出每个日期的起始页。
+- **翻页交互**：
+  - 桌面左右双页：翻下一页用 `leafNext`（右半、`transform-origin:left`、双面 `backface-visibility`），正面放当前右页、背面放下一左页，`rotateY(0→-180deg)` 0.9s；结束瞬间隐藏 leaf、步进 2 页、重绘静态页，避免闪回。回翻用 `leafPrev`（左半、`origin:right`、0→180deg）。
+  - 移动端（`max-width:760px`）单页模式：隐藏右页与翻页层，步进 1 页，切页用 `animate()` 位移淡入。
+  - 入口：书本左右边缘 34px 热区、底部 `‹ ›`、键盘 ←/→、手机左右滑动（阈值 46px）。
+  - 封面：`assets/group-xiyin-home.webp` 夜晚客厅作底，深紫渐变 + “汐音的更新手账”标题 + 统计与日期范围；扉页为说明 + 日期目录。
+- **样式**：纸面米色渐变、左右页内侧书脊阴影、中缝 `book-hinge`、`bk-day` / `bk-item` / `bk-flag` 独立命名避免与旧 `.log-*` 冲突；重要条目保留金色 inset 竖条与「重要」金标。
+- **踩坑与修正**：
+  - 关闭按钮原先 `right:-6px` 溢出 dialog，触发横向滚动条 → 改为书内右上角圆形按钮 + `#logDlg{overflow:visible}`。
+  - 页码原在书内底部被书脊遮 → 移到书外 `bottom:-34px`，`book-wrap` 预留 40px。
+  - 续页日期头原先重复显示当天总数 → 续页只显示「续」。
+- **验证**（本机预览，111 条 / 5 天）：
+  - 分页结果 28 页（封面 + 扉页 + 26 内容页）；目录为 11/17→第 3 页、11/16→第 8 页、11/15→第 17 页、11/12→第 23 页、11/11→第 26 页，日期边界与页号一致。
+  - 翻页中途截图可见纸页绕书脊倾斜，结束后 `3 / 28`、左页 17 日首页 4 条、右页续页 4 条，`pageR.scrollHeight == clientHeight`（无溢出）。
+  - 单页模式（`BOOK.single=true`）页宽撑满、无溢出。
+- **部署**：`index.html` / `index.html.gz` scp 到 `/opt/zhichao/`，MD5 `c6f9bc5d68405aa3527264ea2ec18703` / `f1111e69e40b201b095befb5f37d50e1` 与线上一致；首页 200，页面 `grep bk-cover` 命中 13 处。
+- **日志合并**：部署前先拉取容器 `/data/changelog.json`，发现线上已有 **7 条**被用户标为重要（11-12 13:45、11-15 11:30/20:30/23:05、11-16 20:48/20:51、11-17 10:32），追加新条目时保留原标记，未覆盖；现为 112 条 / 7 条重要，MD5 `aacdf563ced1c1e5e7cc04a8948e9c25`（容器与站点副本一致）。
+- **备份位置**：服务器 `/opt/zhichao-backups/20261117-1126/`（旧 index.html、index.html.gz）；本机 `backups/index-before-logbook-*.html`。
+
+---
+
+## 2026-11-17 11:54｜翻书换成 StPageFlip 软页引擎（替换同日 11:26 自研版）
+
+上一版自研翻页不合格：纸页整块 `rotateY`，没有弯曲；翻完要等 0.9s 才换内容。分页算法保留，翻页改交给成熟库。
+
+- **库**：page-flip（StPageFlip）2.0.7，44KB，无 jQuery 依赖，放 `cloud/js/page-flip.min.js`。**刻意不放 `/vendor/`**：nginx 的 `/vendor/` 走 `auth_request`，未登录 401，库加载失败整本书就翻不动；`js/` 是公开外壳路径，稳定 200。
+- **结构**：`#logBook` 内每页一个 `.bk-sheet`，封面加 `data-density="hard"`。settings：`size:'stretch'`、`showCover:true`、`usePortrait:true`、`flippingTime:700`、`drawShadow:true`、`maxShadowOpacity:0.42`、`disableFlipByClick:true`、`clickEventForward:true`，`loadFromHTML` 交给库渲染。
+- **分页**：沿用按天分组 + 隐藏容器量高；页宽 = 容器宽 / 2（<760px 单页），高度预算 = 书容器高 − 86px。
+- **星标**：点完就地重渲染该页（按 `page.items` 当前数据现算节点），不重建整本、不打断翻页位置。
+- **三个坑**：
+  1. `PF.destroy()` 会连 `#logBook` 容器一起删掉，第二次打开找不到容器 → mount 时检测并重建容器。
+  2. 星标点不动：库保留一份隐藏的 `.bk-sheet` 副本，交互要落在可见的 `.stf__item` 上；且 `renderSheet` 原先复用构建时节点（状态是旧的），改成按当前数据现算。
+  3. 库要 `clickEventForward:true` 才把点击转发给页内按钮。
+- **验证**：25 页（封面 + 扉页 + 23 内容页）；翻页中截图可见纸面绕书脊弯成弧、底部折角与折痕阴影；`flipNext()` 后 `getCurrentPageIndex` 同帧变化、目标页立即显示；关闭重开停在上次页（2/25 保持）；窄容器 380px 自动 portrait 单页、无溢出。
+- **部署**：`index.html` `2a2ce2e86c2ae81141ebebf9f5ca2141`、`index.html.gz` `75763905058ae1b8b249c3b872a68ec3`、`js/page-flip.min.js` `d437997444137c3d1ee879f2bd321b44`，线上一致；首页 200、`/js/page-flip.min.js` 200（44058 字节）。备份 `/opt/zhichao-backups/20261117-1154/`。
+- **日志**：先拉容器版本再合并，新增 1 条（113 条 / 7 条重要保留），`cloud/data/changelog.json` 与 `/opt/zhichao-memory/data/changelog.json`、`/opt/zhichao/data/changelog.json` MD5 均 `b9492d2521e983d3f418920987b4da0e`。
+
+---
+
+## 2026-11-18 21:15（Asia/Shanghai）｜新增《汐音 · 服装与立绘风格规范》
+
+- **变更类型**：文档新增（未改站点代码与线上文件，纯本地资产）
+- **需求**：把用户确认的「灰调日系动画设定图」画风固化成文档，方便日后换装、出周边时复现一致风格。
+- **产出**：`/home/user/zhichao/汐音-服装设计规范.md`（v1.0）
+  - 画风量化参数表：线稿（深灰褐 1–2px @1024）、平涂、明度 78–95、一阶淡粉紫阴影、对比偏低但轮廓清晰、纯浅粉背景；
+  - 图生图提示词模板（身份段 / 服装段 / 风格段 / 负向段），并记录两条关键写法：只写「极细线」会导致整体褪色丢轮廓，需同时写「轮廓锐利、边界干净」；「无渐变」与「柔和」不能并列写。
+  - 参考图分工规则：图一身份、图二只给画风，禁止借人物，避免多图串角色。
+  - 头像标准流程：头占高 60–70%、四周安全区 ≥6%、出图后缩 88% 居中做安全边距版。
+  - 迭代记录：水彩版→粗线赛璐璐→细线薄涂→灰调定版，冷发色版为备选未采用。
+- **定版依据**：`汐音-粉兔兔冬装-日系-灰调.png`（2026-11-18 用户确认）。
+- **影响范围**：仅规范文档；站点立绘 `cloud/assets/mascot*.png` 未替换，上线另需备份。
+
+---
+
+## 2026-11-18 21:57（Asia/Shanghai）｜深色主题看板娘换成哥特礼服（夜间模式）
+
+- **变更类型**：站点前端 + 资源新增（`cloud/index.html`、`cloud/js/mascot.js`、`cloud/assets/`）
+- **需求**：用户确认哥特时装方案，要求作为「夜间模式的看板娘」应用到站点并部署。
+- **画风**：沿用《汐音-服装设计规范.md》v1.0 的「灰调日系动画设定图」；哥特深色一律用雾灰紫过渡，不出现死黑色块。
+- **新增资源**：
+  - `assets/mascot/layer-body-night.webp`（768×768，RGBA，64.7KB）：常驻看板娘夜间单层整图。
+  - `assets/mascot-night.webp`（480×360，RGBA，23.2KB）：首屏右上角横版侧卧插画，构图对齐原 `mascot.webp`。
+  - 生成链：`image_edit`（灰调日系）→ `mediakit-cli image remove-image-background --scene general` 抠图 → **alpha 解混去白边**（背景采样 `#F3E9EB`，`F=(C-(1-a)B)/a`，a<0.42 置透明），否则深色底上会有浅粉描边。
+- **代码改动**：
+  - `js/mascot.js`：`ASSET` 增 `bodyNight`；新增 `isNightTheme()` / `bodySrc()`；`applyThemeAssets()` 用 MutationObserver 监听 `html[data-zc-theme]`，只替换 img `src`、不重建 DOM，呼吸/跟随/拖拽位置不打断；夜间移除后发层（哥特版为单层整图，长发放视差无意义）；`preload()` 预载两套；`shutdown()` 断开 observer。
+  - `index.html`：首屏 `.mascot` 增 `data-src-night`；`enterApp()` 回填改为「夜间优先取 night 图，否则回落日间」；新增 `watchMascotNight` 监听，仅在 `#app` 可见（已登录、图片已回填）时才换图，避免触发受保护资源的匿名请求。
+  - 版本号：`js/mascot.js?v=20261116c` → `?v=20261118a`。
+- **本地验证**（`python -m http.server` + Chromium）：
+  - `ZC.set('theme','dark')` 后：首屏 `assets/mascot-night.webp`、常驻 `assets/mascot/layer-body-night.webp`、后发层子节点 0；
+  - 切回 `light`：首屏回 `assets/mascot.webp`、常驻回 `layer-body.webp`、后发层恢复 1 个 img；
+  - 深色底截图确认无白边、黑纱半透明保留。
+- **部署**：
+  - `index.html` `29693d32…`、`index.html.gz` `e75af82a…`、`js/mascot.js` `26842fbe…`、`mascot.js.gz` `fb9d591c…`、`assets/mascot-night.webp` `e7301c85…`、`assets/mascot/layer-body-night.webp` `e3517eb6…`，服务器与本机 MD5 全部一致；上传后 `touch` 两个 `.gz` 保证 `gzip_static` 生效。
+  - 线上复核：`/` 200；`/js/mascot.js?v=20261118a` 200 且命中 `layer-body-night`；匿名 `/assets/mascot-night.webp` 401（鉴权正常）。
+- **更新手账**：条目 123 → 124，`/opt/zhichao-memory/data/changelog.json`、`/opt/zhichao/data/changelog.json`、`cloud/data/changelog.json` 三处 MD5 `26700ebe…` 一致，保留既有 `important` 标记。
+- **备份**：`/opt/zhichao-backups/20261118-2155/`（旧 index.html、index.html.gz、js/mascot.js、js/mascot.js.gz）。
+- **未验证**：线上登录态的真实浏览器渲染（仅校验文件部署与匿名可读性）；如需可登录后人工看一眼深色切换。
+
+---
+
+## 2026-11-18 23:02（Asia/Shanghai）｜聊天页三形态立绘换成知潮制服三件套
+
+- **变更类型**：站点资源替换（`cloud/assets/chat-xiyin*.webp`，未改 HTML/JS/CSS）
+- **需求**：聊天页三个形态的服装重新设计，统一为「知潮制服系统」：御姐＝主编版、少女＝编辑版、萝莉＝见习生版；少女与萝莉按要求改为暗色。
+- **画风**：沿用《汐音-服装设计规范.md》v1.0 灰调日系；暗色统一用雾灰紫过渡，避开死黑。
+- **设计要点**：
+  - 主编版：深雾蓝黑斜裁长风衣、烟紫高领、金线腰封、月相胸针、稿纸、尖头短靴。
+  - 编辑版：暗莓紫工装短外套 + 雾灰米长裙（薄纱印浅灰蓝水波纹）、奶油丝巾、`知潮 · 编辑` 工牌、采集腰包。
+  - 见习生版：暗夜空蓝背带短裤裙、奶油白泡泡袖水手领、暗酒红大蝴蝶结与玛丽珍鞋、深灰蓝报童帽、月牙贴纸本。
+- **生产技术**：`image_edit` 出设计稿 → `mediakit-cli image remove-image-background --scene general` 抠图 → alpha 解混去白边（`F=(C-(1-a)B)/a`，a<0.42 置透明，背景采样 ≈ `#F3E9EB`）→ trim → 按 95% 高度居中贴到 720×1080 透明画布 → WebP q85。
+  - 注：直接让模型输出「透明背景」不可靠（三次请求里有两次返回 RGB 黑底/不透明图），仍以抠图 + 解混为稳定做法。
+- **本地验证**（`http.server` + Chromium，登录态模拟后 `openChat()`，逐形态 `initForm()` 截图）：三套立绘透明底干净、无白边、与浅色与深色主题均正常显示；文字标签「御姐 / 萝莉 / 少女形态 · 在线」与图片对应正确。
+- **部署**：三张 WebP 上传 `/opt/zhichao/assets/`，MD5 与本地一致：
+  `chat-xiyin.webp 7511448e…`、`chat-xiyin-cute.webp 00c68bab…`、`chat-xiyin-girl.webp 487eee45…`。
+- **更新手账**：条目 124 → 125，三处 `changelog.json` MD5 `54db6786…` 一致。
+- **备份**：服务器 `/opt/zhichao-backups/20261118-2300/`（旧三张立绘）；本机 `backups/chat-xiyin*-before-nightstaff-20261118.webp`。
+- **未验证**：线上登录态的聊天页实际渲染（仅校验文件与本地同构页面）。
+
+---
+
+## 2026-11-18 23:08（Asia/Shanghai）｜聊天页三形态统一为哥特体系（第二轮）
+
+- **变更类型**：站点资源替换（`cloud/assets/chat-xiyin*.webp`，未改 HTML/JS/CSS）
+- **需求**：用户认为三形态应统一风格——少女形态直接沿用夜间哥特立绘，御姐与萝莉也改做哥特造型。
+- **产出**：
+  - 御姐 → `chat-xiyin.webp`：哥特主编。修身高领长裙（雾黑灰缎面 + 月光白蕾丝领口袖口）、暗酒红交叉束腰、短黑纱披肩、尖拱蕾丝裙摆、月相胸针、黑蕾丝长手套、长柄烛台、系带高跟短靴。
+  - 少女 → `chat-xiyin-cute.webp`：直接复用夜间模式同一张哥特立绘（`哥特立绘-透明.png`），持烛台站姿，与常驻看板娘夜间形象完全一致。
+  - 萝莉 → `chat-xiyin-girl.webp`：哥特见习生。黑色多层蕾丝蓬蓬裙 + 白蕾丝小围裙（口袋露手账本）、暗酒红大蝴蝶结、小黑礼帽（酒红缎带 + 月牙别针）、月牙提灯、深灰蓝条纹袜、暗酒红玛丽珍鞋。
+- **技术**：御姐/萝莉 `image_edit` 出稿（图一给形态身份、图二给哥特风格语言）→ mediakit 抠图 → alpha 解混去白边 → trim → 95% 高度居中贴 720×1080 → WebP q85。少女直接走解混 + 裁切，未重新生成，保证与夜间立绘同源。
+- **本地验证**：Chromium 模拟登录后 `openChat()`，逐形态 `initForm()` 截图；`mature / girl / cute` 三档与三张图对应正确，透明底无白边，浅色面板下显示正常。
+- **部署**：三张 WebP MD5 与本地一致——`chat-xiyin.webp 2d67c61f…`、`chat-xiyin-cute.webp 3800b394…`、`chat-xiyin-girl.webp 2b87931f…`。
+- **更新手账**：125 → 126 条，三处 MD5 `2ea46370…` 一致。
+- **备份**：服务器 `/opt/zhichao-backups/gothic-20261118-2306/`（上一版暗色制服三张）。
+- **未验证**：线上登录态实际渲染（文件与同构页面已验证）。
+
+---
+
+## 2026-11-18 23:16（Asia/Shanghai）｜本地仓库 E:\AIHOT 与线上对齐
+
+- **变更类型**：镜像同步（服务器 → 本地），不改站点。
+- **做法**：本地无 git/ssh 在 PATH，改用 `C:\Windows\System32\OpenSSH\ssh.exe` / `scp.exe`，密钥 `C:\Users\31737\.ssh\id_rsa`（已验证免密）。
+- **差异判定**：服务器 `find + md5sum` 清单 106 条，本地 `Get-FileHash` 清单，按「仅服务器有 / 内容不同 / 仅本地有」三类比对。
+- **拉取 19 个**：`assets/book-cover-art-sm.webp`、`book-cover-art.webp`、`book-cover-back.webp`、`mascot-night.webp`、`mascot/layer-body-night.webp`、`js/page-flip.min.js`、`vendor/page-flip.min.js`、`styles/clock.css.gz`；`assets/chat-xiyin{,-cute,-girl}.webp`、`data/changelog.json{,.gz}`、`data/current.json{,.gz}`、`index.html{,.gz}`、`js/mascot.js{,.gz}`。
+- **保留 29 个本地独有文件**（旧 PNG 素材、`beautify.js`/`polish.js`/`beautify.css`/`polish.css` 实验件、`index.backup-before-mascot.html`），未删除。
+- **校验**：同步后重算本地清单，与服务器比对 **缺 0 / 不一致 0**；三张聊天立绘与 `changelog.json`（`2ea46370…`）均与线上一致。
+- **备份**：`E:\AIHOT\.sync-backup-20261118\`（13 个被覆盖文件 + 旧 `OPS-CHANGELOG.md`）。
+- **文档**：`OPS-CHANGELOG.md` 514 → 743 行，旧 31 个段落全部保留；`汐音-服装设计规范.md` 首次落到本地；`HANDOVER-zhichao-curation.md` MD5 未变。

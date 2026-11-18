@@ -15,6 +15,7 @@
 
   var ASSET = {
     body: 'assets/mascot/layer-body.webp',
+    bodyNight: 'assets/mascot/layer-body-night.webp',
     backhair: 'assets/mascot/layer-backhair.webp',
     faces: {
       hi: 'assets/chibi-hi.webp',
@@ -24,6 +25,13 @@
   };
 
   var FACE_CYCLE = ['hi', 'love', 'lie'];
+
+  /* 夜间主题（哥特礼服）切换：html[data-zc-theme="dark"] 时换成整图单层的哥特版，
+     后发分层在夜间不参与视差（哥特版的长发已被黑纱遮住，分层无意义）。 */
+  function isNightTheme() {
+    return document.documentElement.getAttribute('data-zc-theme') === 'dark';
+  }
+  function bodySrc() { return isNightTheme() ? ASSET.bodyNight : ASSET.body; }
 
   /* 位置持久化独立 key（与设置 zhichao:settings:v1 分开） */
   var POS_KEY = 'zhichao:mascot:pos:v1';
@@ -372,10 +380,10 @@
         '<div class="zc-mascot__bob">' +
           '<div class="zc-mascot__pop">' +
             '<div class="zc-mascot__layer zc-mascot__layer-back">' +
-              '<img src="' + ASSET.backhair + '" alt="" draggable="false">' +
+              (isNightTheme() ? '' : '<img src="' + ASSET.backhair + '" alt="" draggable="false">') +
             '</div>' +
             '<div class="zc-mascot__layer zc-mascot__layer-body">' +
-              '<img src="' + ASSET.body + '" alt="汐音" draggable="false">' +
+              '<img src="' + bodySrc() + '" alt="汐音" draggable="false">' +
             '</div>' +
           '</div>' +
         '</div>' +
@@ -389,7 +397,7 @@
         '</button>' +
       '</div>' +
       '<button class="zc-mascot__avatar" type="button" aria-label="展开汐音">' +
-        '<img src="' + ASSET.body + '" alt="汐音小头像" draggable="false">' +
+        '<img src="' + bodySrc() + '" alt="汐音小头像" draggable="false">' +
       '</button>';
 
     return root;
@@ -406,6 +414,41 @@
     state.chatBtn = state.root.querySelector('.zc-mascot__chat');
     state.foldBtn = state.root.querySelector('.zc-mascot__fold');
     state.avatar = state.root.querySelector('.zc-mascot__avatar');
+  }
+
+  /* 主题切换时只换资源，不重建 DOM：呼吸、跟随、拖拽位置都保持原样 */
+  function applyThemeAssets() {
+    if (!state.booted) return;
+    var src = bodySrc();
+    [state.layerBody, state.avatar].forEach(function (host) {
+      if (!host) return;
+      var im = host.tagName === 'IMG' ? host : host.querySelector('img');
+      if (im && im.getAttribute('src') !== src) im.src = src;
+    });
+    if (!state.layerBack) return;
+    var backImg = state.layerBack.querySelector('img');
+    if (isNightTheme()) {
+      if (backImg) state.layerBack.removeChild(backImg);
+    } else if (!backImg) {
+      var im = document.createElement('img');
+      im.src = ASSET.backhair;
+      im.alt = '';
+      im.draggable = false;
+      state.layerBack.appendChild(im);
+    }
+  }
+
+  function watchTheme() {
+    if (state.themeObserver) return;
+    state.themeObserver = new MutationObserver(function (muts) {
+      for (var i = 0; i < muts.length; i++) {
+        if (muts[i].attributeName === 'data-zc-theme') { applyThemeAssets(); return; }
+      }
+    });
+    state.themeObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-zc-theme']
+    });
   }
 
   /* ---------------- 气泡与反馈 ---------------- */
@@ -643,7 +686,7 @@
   /* ---------------- 生命周期 ---------------- */
 
   function preload() {
-    [ASSET.body, ASSET.backhair].forEach(function (src) {
+    [ASSET.body, ASSET.bodyNight, ASSET.backhair].forEach(function (src) {
       var im = new Image();
       im.src = src;
     });
@@ -664,6 +707,8 @@
       restorePos();
       bindEvents();
       applySettings();
+      watchTheme();
+      applyThemeAssets();
       preload();
 
       state.booted = true;
@@ -689,6 +734,7 @@
       detachDrag(state.stage);
       detachDrag(state.avatar);
       detachAll();
+      if (state.themeObserver) { state.themeObserver.disconnect(); state.themeObserver = null; }
       if (state.safeProbe && state.safeProbe.parentNode) {
         state.safeProbe.parentNode.removeChild(state.safeProbe);
       }

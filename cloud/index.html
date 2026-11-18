@@ -608,6 +608,137 @@ html[data-zc-theme="dark"] .rdr-del:hover{color:#f2bcc5;border-color:rgba(242,18
 .log-flag:disabled{opacity:.45;cursor:wait}
 .log-flag svg{width:14px;height:14px;display:block}
 
+/* ---------- 更新日志：翻书（StPageFlip 软页引擎） ---------- */
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+#logDlg{max-width:1140px;width:min(1140px,calc(100% - 28px));overflow:visible}
+.book-wrap{position:relative;padding:6px 0 12px}
+.book-close{top:10px;right:12px;z-index:90;width:28px;height:28px;border-radius:999px;background:rgba(255,253,248,.94);
+  box-shadow:0 6px 16px -6px rgba(50,30,45,.5);font-size:15px;display:flex;align-items:center;justify-content:center}
+.book{position:relative;width:100%;height:min(620px,66vh);border-radius:6px;
+  background:radial-gradient(92% 74% at 50% 50%,#3a2a42 0%,#2a1f31 58%,#1e1626 100%)}
+.book-hit{position:absolute;top:0;bottom:0;width:30px;border:0;background:transparent;z-index:80;cursor:pointer;padding:0}
+.hit-l{left:-4px}.hit-r{right:-4px}
+/* 页码印在正文书页页尾，封面/封底/落款页不显示 */
+.bk-pageno{position:absolute;left:0;right:0;bottom:7px;z-index:5;text-align:center;pointer-events:none;
+  font-family:var(--serif);font-size:9.5px;letter-spacing:2px;color:#a8949e}
+.log-measure{position:absolute;left:-9999px;top:0;visibility:hidden;padding:22px 26px;font-family:var(--sans)}
+
+/* 每一张纸 */
+.bk-sheet{position:relative;width:100%;height:100%;box-sizing:border-box;overflow:hidden;
+  padding:22px 26px 30px;background:linear-gradient(180deg,#fdfaf3 0%,#fbf5e9 100%);color:#4a3d43;font-family:var(--sans)}
+.bk-sheet.is-art,.bk-sheet.is-title,.bk-sheet.is-back{padding:0;background:#2b2033;color:#fdeef4}
+
+/* 日期 / 条目 */
+.bk-day{display:flex;align-items:center;gap:8px;margin:0 0 9px;padding-bottom:7px;border-bottom:1px solid rgba(150,120,100,.22)}
+.bk-day b{font-family:var(--serif);font-size:15px;letter-spacing:1px;color:#4b3742}
+.bk-cnt{font-size:10px;color:#9b8a90;letter-spacing:.4px}
+.bk-imp{font-size:9.5px;padding:1.5px 6px;border-radius:5px;background:linear-gradient(135deg,#bd9210,#d6b06a);color:#fff;letter-spacing:.6px}
+.bk-cont{font-size:9.5px;color:#a3939a;border:1px dashed rgba(150,120,100,.4);padding:1px 5px;border-radius:5px}
+.bk-item{padding:7px 0 8px;border-bottom:1px dashed rgba(150,120,100,.18)}
+.bk-item:last-child{border-bottom:0}
+.bk-item.imp{padding-left:8px;margin-left:-8px;box-shadow:inset 2px 0 0 var(--gold);border-radius:2px}
+.bk-line{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap}
+.bk-time{font-family:var(--serif);font-size:10.5px;color:#a08b93;flex:0 0 auto;min-width:34px}
+.bk-title{font-size:13px;font-weight:700;color:#46343c;line-height:1.45}
+.bk-kind{font-size:9px;padding:1.5px 6px;border-radius:5px;background:rgba(170,140,150,.14);font-weight:600;letter-spacing:.4px}
+.bk-kind.imp{background:linear-gradient(135deg,#bd9210,#d6b06a);color:#fff}
+.bk-flag{margin-left:auto;flex:0 0 auto;width:22px;height:22px;border:0;background:none;padding:0;cursor:pointer;
+  color:#c3b3ba;display:inline-flex;align-items:center;justify-content:center;transition:.18s;align-self:center}
+.bk-flag:hover{color:var(--gold)}
+.bk-flag.on{color:var(--gold)}
+.bk-flag:disabled{opacity:.4;cursor:wait}
+.bk-flag svg{width:12px;height:12px;display:block}
+.bk-note{font-size:11px;line-height:1.62;color:#7d6b73;margin-top:3px;padding-left:41px;
+  display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
+
+/* 封面：左页插画 + 右页题名；封底：另一张插画收尾 */
+.bk-sheet.is-art::after{content:"";position:absolute;right:0;top:0;bottom:0;width:13px;z-index:3;pointer-events:none;
+  background:linear-gradient(to left,rgba(16,10,22,.3),rgba(16,10,22,0))}
+.bk-sheet.is-title::after{content:"";position:absolute;left:0;top:0;bottom:0;width:15px;z-index:3;pointer-events:none;
+  background:linear-gradient(to right,rgba(12,8,18,.32),rgba(12,8,18,0))}
+.bk-sheet.is-back::after{content:"";position:absolute;left:0;top:0;bottom:0;width:14px;z-index:3;pointer-events:none;
+  background:linear-gradient(to right,rgba(16,10,22,.3),rgba(16,10,22,0))}
+.bk-art{position:absolute;inset:0;overflow:hidden}
+.bk-art img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 43%;display:block}
+.bk-art .shade{position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(24,14,30,.42) 0%,rgba(24,14,30,0) 24%,rgba(24,14,30,0) 60%,rgba(24,14,30,.76) 100%)}
+.bk-art .seal{position:absolute;right:20px;top:20px;z-index:4;width:32px;height:32px;border-radius:50%;
+  border:1px solid rgba(232,196,166,.45);display:flex;align-items:center;justify-content:center;color:#efcdaa}
+.bk-art .seal svg{width:15px;height:15px;display:block}
+.bk-art .cap{position:absolute;left:18px;bottom:22px;z-index:4;writing-mode:vertical-rl;
+  font-family:var(--serif);font-size:10.5px;letter-spacing:4.5px;color:rgba(244,220,230,.62);
+  text-shadow:0 2px 10px rgba(16,9,22,.85)}
+
+/* 右页题名 */
+.bk-titlepage{position:absolute;inset:0;padding:30px 30px 26px;display:flex;flex-direction:column;
+  background:radial-gradient(128% 92% at 80% 10%,#3d2c49 0%,#2c2036 48%,#1f1727 100%)}
+.bk-titlepage .frame{position:absolute;inset:13px;border:1px solid rgba(230,200,170,.2);border-radius:2px;pointer-events:none}
+.bk-titlepage .frame::before,.bk-titlepage .frame::after{content:"";position:absolute;width:14px;height:14px;border:0}
+.bk-titlepage .frame::before{left:-1px;top:-1px;border-left:1px solid rgba(232,200,170,.5);border-top:1px solid rgba(232,200,170,.5)}
+.bk-titlepage .frame::after{right:-1px;bottom:-1px;border-right:1px solid rgba(232,200,170,.5);border-bottom:1px solid rgba(232,200,170,.5)}
+.bk-titlepage .tp-kicker{position:relative;font-size:9.5px;letter-spacing:3.4px;color:#e2c49f;opacity:.9}
+.bk-titlepage .stars{position:absolute;inset:0;pointer-events:none;opacity:.55;
+  background-image:
+    radial-gradient(circle at 13% 15%, rgba(255,238,243,.8) 0 .9px, transparent 1.3px),
+    radial-gradient(circle at 87% 11%, rgba(255,238,243,.5) 0 .8px, transparent 1.2px),
+    radial-gradient(circle at 72% 33%, rgba(255,238,243,.55) 0 .7px, transparent 1.1px),
+    radial-gradient(circle at 24% 58%, rgba(255,238,243,.45) 0 .7px, transparent 1.1px),
+    radial-gradient(circle at 58% 88%, rgba(232,200,170,.4) 0 .8px, transparent 1.2px),
+    radial-gradient(circle at 38% 30%, rgba(255,238,243,.5) 0 .6px, transparent 1px)}
+.bk-titlepage .orb{position:absolute;right:-30px;bottom:46px;width:154px;height:154px;color:rgba(226,196,170,.11);pointer-events:none}
+.bk-titlepage .orb svg{width:100%;height:100%;display:block}
+.bk-titlepage .yr{position:absolute;right:28px;top:50%;transform:translateY(-50%);writing-mode:vertical-rl;
+  font-size:9px;letter-spacing:5px;color:rgba(226,196,170,.42);pointer-events:none}
+.bk-titlepage .tp-mid{position:relative;margin:clamp(16px,6vh,58px) 0 0;padding-bottom:4px}
+.bk-titlepage h3{font-family:var(--serif);font-size:40px;line-height:1.3;margin:0;letter-spacing:7px;font-weight:700;
+  color:#fdeef4;text-shadow:0 8px 26px rgba(16,9,22,.66)}
+.bk-titlepage .tp-rule{display:flex;align-items:center;gap:9px;margin:16px 0 0;color:rgba(226,196,170,.55)}
+.bk-titlepage .tp-rule i{flex:0 0 auto;width:52px;height:1px;background:linear-gradient(90deg,rgba(226,196,170,.6),rgba(226,196,170,0))}
+.bk-titlepage .tp-rule svg{width:13px;height:13px;display:block;opacity:.85}
+.bk-titlepage .tp-sub{font-size:12px;letter-spacing:2px;color:#f3d9e2;opacity:.9;margin-top:12px}
+.bk-titlepage .tp-bot{position:relative;margin-top:auto}
+.bk-titlepage .tp-meta{font-size:10.5px;letter-spacing:1.6px;color:#ffe9d2;opacity:.86}
+.bk-titlepage .tp-hint{font-size:10px;letter-spacing:2px;color:#ffd7c6;opacity:.86;margin-top:9px}
+
+/* 封底落款 */
+.bk-art.back .shade{background:linear-gradient(180deg,rgba(22,13,28,.34) 0%,rgba(22,13,28,0) 22%,rgba(22,13,28,.2) 50%,rgba(22,13,28,.9) 100%)}
+.bk-art.back .bc{position:absolute;left:0;right:0;bottom:30px;z-index:4;padding:0 34px;text-align:center}
+.bk-art.back .bc-k{font-size:9px;letter-spacing:3.2px;color:rgba(232,200,170,.8)}
+.bk-art.back .bc-t{font-family:var(--serif);font-size:15px;letter-spacing:2.4px;color:#fdf0f6;margin-top:9px;
+  text-shadow:0 3px 14px rgba(16,9,22,.8)}
+.bk-art.back .bc-m{font-size:10px;letter-spacing:1.6px;color:rgba(255,238,216,.72);margin-top:9px}
+.bk-colophon{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:0;padding:0 34px;text-align:center;background:linear-gradient(180deg,#fdfaf3 0%,#fbf5e9 100%)}
+.bk-colophon .cl-k{font-size:9px;letter-spacing:3.2px;color:#bb9b8f}
+.bk-colophon .cl-t{font-family:var(--serif);font-size:16px;letter-spacing:3px;color:#5b434e;margin-top:14px}
+.bk-colophon .cl-rule{display:flex;align-items:center;gap:8px;margin:18px 0 0;color:rgba(180,140,110,.5)}
+.bk-colophon .cl-rule i{width:44px;height:1px;background:linear-gradient(90deg,rgba(180,140,110,0),rgba(180,140,110,.55),rgba(180,140,110,0))}
+.bk-colophon .cl-rule svg{width:11px;height:11px;opacity:.7}
+.bk-colophon .cl-m{font-size:9.5px;letter-spacing:1.6px;color:#a3909a;margin-top:18px}
+.bk-colophon .cl-note{font-size:10px;line-height:1.9;letter-spacing:.6px;color:#b0a0a6;margin-top:22px;max-width:250px}
+/* 扉页 */
+.bk-front{padding:6px 2px}
+.bk-front .ft-k{font-size:9.5px;letter-spacing:3.2px;color:#b09aa2}
+.bk-front h4{font-family:var(--serif);font-size:24px;letter-spacing:3px;margin:10px 0 12px;color:#4b3742}
+.bk-front p{font-size:11.5px;line-height:1.9;color:#7a6871;margin:0 0 10px}
+.bk-front ul{list-style:none;padding:0;margin:12px 0 0}
+.bk-front li{font-size:11px;color:#7a6871;padding:6px 0;border-top:1px dashed rgba(150,120,100,.18);display:flex;gap:8px}
+.bk-front li i{font-style:normal;color:#b9907f}
+.bk-front ul.bk-toc{margin:14px 0 0}
+.bk-front ul.bk-toc li{align-items:baseline}
+.bk-front ul.bk-toc li i{font-family:var(--serif);font-size:11.5px;color:#6f5866;letter-spacing:.6px}
+.bk-front ul.bk-toc li span{margin-left:auto;color:#ab97a0;font-size:10px;letter-spacing:1px}
+.bk-front-tip{font-size:10.5px;line-height:1.8;color:#a3909a;margin:16px 0 0}
+@media (max-width:760px){
+  .book{height:min(600px,70vh)}
+  .bk-titlepage h3{font-size:29px;letter-spacing:4px}
+  .bk-titlepage .tp-sub{font-size:11px;letter-spacing:1.4px}
+  .bk-art.back .bc-t{font-size:13px;letter-spacing:1.6px}
+  .bk-sheet{padding:18px 20px 26px}
+  .bk-note{padding-left:0;margin-top:2px}
+  .bk-title{font-size:12.5px}
+}
+
 /* ---- 回到顶部 ---- */
 #top{position:fixed;right:22px;bottom:24px;width:44px;height:44px;border-radius:50%;
   border:1px solid var(--line);background:var(--glass-strong);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
@@ -892,7 +1023,7 @@ html[data-zc-theme="dark"] .rdr-del:hover{color:#f2bcc5;border-color:rgba(242,18
       <svg class="corner-deco" style="left:26%;top:60px" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.2 6.8L21 11l-6.8 2.2L12 20l-2.2-6.8L3 11l6.8-2.2z"/></svg>
       <svg class="corner-deco" style="left:38%;top:108px;animation-delay:1.4s" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
       <svg class="corner-deco" style="left:14%;top:150px;animation-delay:2.6s" width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.2 6.8L21 11l-6.8 2.2L12 20l-2.2-6.8L3 11l6.8-2.2z"/></svg>
-      <img class="mascot" data-src="assets/mascot.webp" alt="知潮看板娘汐音" width="230">
+      <img class="mascot" data-src="assets/mascot.webp" data-src-night="assets/mascot-night.webp" alt="知潮看板娘汐音" width="230">
       <div class="page-head">
         <h1 id="pageTitle">今日热点推送</h1>
         <p id="tagline"></p>
@@ -1028,11 +1159,13 @@ html[data-zc-theme="dark"] .rdr-del:hover{color:#f2bcc5;border-color:rgba(242,18
 </dialog>
 
 <dialog id="logDlg" aria-labelledby="logTitle">
-  <div class="rdr log-wrap">
-    <button class="rdr-close" id="logClose" aria-label="关闭">×</button>
-    <h2 id="logTitle">汐音的更新手账</h2>
-    <p class="log-sub">按日期分组，新的在上面</p>
-    <div class="log-list" id="logList"></div>
+  <div class="book-wrap">
+    <button class="rdr-close book-close" id="logClose" aria-label="关闭">×</button>
+    <h2 id="logTitle" class="sr-only">汐音的更新手账</h2>
+    <div class="book" id="logBook"></div>
+    <button class="book-hit hit-l" id="hitL" type="button" aria-label="上一页"></button>
+    <button class="book-hit hit-r" id="hitR" type="button" aria-label="下一页"></button>
+    <div id="logMeasure" class="log-measure" aria-hidden="true"></div>
   </div>
 </dialog>
 
@@ -1144,6 +1277,7 @@ html[data-zc-theme="dark"] .rdr-del:hover{color:#f2bcc5;border-color:rgba(242,18
   </div>
 </div>
 
+<script src="js/page-flip.min.js?v=20261117e"></script>
 <script>
 /* ============================================================
    服务器端口令认证（前端不持有任何口令秘密）
@@ -1356,6 +1490,67 @@ const SFX = (() => {
     src.start(at); src.stop(at + dur);
   }
   function at0(offset){ const a = ctx(); return a ? a.currentTime + (offset || 0.01) : 0; }
+  /* 纸张沙沙声：噪声先做随机台阶式包络（细碎的纸面摩擦起伏），再走高通+带通，
+     不做频率扫频——避免出现“呜呜”的哨音感 */
+  function rustle(at, dur, gain, cutoff){
+    const a = ctx(); if(!a) return;
+    const len = Math.ceil(a.sampleRate * dur);
+    const buf = a.createBuffer(1, len, a.sampleRate);
+    const d = buf.getChannelData(0);
+    let env = 0, next = 0;
+    for(let i = 0; i < len; i++){
+      if(i >= next){ env = .22 + Math.random()*.78; next = i + a.sampleRate * (.018 + Math.random()*.026); }
+      const tail = Math.pow(1 - i/len, 1.15);
+      d[i] = (Math.random()*2 - 1) * env * tail;
+    }
+    const src = a.createBufferSource(); src.buffer = buf;
+    const hp = a.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 1800;
+    const bp = a.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = cutoff || 3400; bp.Q.value = .7;
+    const g = a.createGain(); g.gain.value = Math.max(.0002, gain * level());
+    src.connect(hp).connect(bp).connect(g).connect(bus);
+    src.start(at); src.stop(at + dur);
+  }
+  /* 拖动纸页的持续沙沙声：循环噪声，音量跟着拖动速度走，停下不动就自动收声 */
+  const drag = { on:false, raf:0, last:null, src:null, g:null, bp:null, jit:0 };
+  function dragOpen(){
+    const a = ctx(); if(!a) return;
+    if(!drag.src){
+      const len = a.sampleRate * 2;
+      const buf = a.createBuffer(1, len, a.sampleRate);
+      const d = buf.getChannelData(0);
+      for(let i = 0; i < len; i++) d[i] = Math.random()*2 - 1;
+      drag.src = a.createBufferSource(); drag.src.buffer = buf; drag.src.loop = true;
+      const hp = a.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 2000;
+      drag.bp = a.createBiquadFilter(); drag.bp.type = "bandpass"; drag.bp.frequency.value = 3600; drag.bp.Q.value = .8;
+      drag.g = a.createGain(); drag.g.gain.value = 0;
+      drag.src.connect(hp).connect(drag.bp).connect(drag.g).connect(bus);
+      drag.src.start();
+    }
+    drag.on = true; drag.last = null; drag.jit = 0;
+    cancelAnimationFrame(drag.raf);
+    const tick = () => {
+      drag.raf = requestAnimationFrame(tick);
+      if(!drag.on) return;
+      const c = (typeof PF !== "undefined" && PF && PF.flipController) ? PF.flipController.calc : null;
+      let speed = 0;
+      if(c){
+        const p = c.getPosition();
+        if(drag.last){ const dx = p.x-drag.last.x, dy = p.y-drag.last.y; speed = Math.sqrt(dx*dx+dy*dy); }
+        drag.last = p;
+      }
+      const target = Math.min(.3 * level(), speed*.032 * level());
+      drag.g.gain.setTargetAtTime(target, a.currentTime, .05);
+      drag.jit++;
+      if(drag.jit % 8 === 0){ drag.bp.frequency.setTargetAtTime(3000 + Math.random()*1600, a.currentTime, .08); }
+    };
+    drag.raf = requestAnimationFrame(tick);
+  }
+  function dragClose(){
+    drag.on = false;
+    cancelAnimationFrame(drag.raf);
+    const a = ctx();
+    if(drag.g && a){ drag.g.gain.setTargetAtTime(0, a.currentTime, .06); }
+  }
   return {
     /* 收进手账：两枚上行的铃音 + 一点星星味的高频 */
     spark(){
@@ -1399,6 +1594,19 @@ const SFX = (() => {
       const t = at0();
       hush(t, .18, .04, 2400);
       note(659.25, t + .02, .16, .045, "sine");
+    },
+    /* 翻书页：一段真实的纸张沙沙声，长度贴着 700ms 翻页动画 */
+    flip(){
+      if(!enabled()) return;
+      rustle(at0(), .45, .26, 3400);
+    },
+    /* 拖动纸页：开始持续摩擦声，音量随拖动速度走 */
+    dragStart(){ if(!enabled()) return; dragOpen(); },
+    dragStop(){ dragClose(); },
+    /* 拖动后松手、纸页落定：一截更短更轻的沙沙声 */
+    landing(){
+      if(!enabled()) return;
+      rustle(at0(), .30, .16, 3000);
     },
     /* 恢复：轻轻的“回来了” */
     back(){
@@ -2045,8 +2253,6 @@ document.getElementById("trashList").addEventListener("click", e => {
   const b = e.target.closest("[data-restore]");
   if(b) restoreItem(b.dataset.restore);
 });
-trashDlg.addEventListener("click", e => { if(e.target === trashDlg) trashDlg.close(); });
-delDlg.addEventListener("click", e => { if(e.target === delDlg) delDlg.close(); });
 
 /* ---------- share dialog ---------- */
 const shareDlg = document.getElementById("shareDlg");
@@ -2071,14 +2277,12 @@ function openShareChannel(chan){
 }
 
 document.getElementById("shareClose").onclick = () => shareDlg.close();
-shareDlg.addEventListener("click", e => { if(e.target === shareDlg) shareDlg.close(); });
 shareDlg.querySelectorAll(".share-chan").forEach(b => {
   b.onclick = () => openShareChannel(b.dataset.chan);
 });
 document.getElementById("rdrClose").onclick = closeReader;
 document.getElementById("rdrDel").onclick = () => { if(rdrFavId) askDelete(rdrFavId); };
 document.getElementById("rdrShare").onclick = e => shareItem(e.currentTarget.dataset.id);
-reader.addEventListener("click", e => { if(e.target === reader) closeReader(); });
 reader.addEventListener("close", () => { if(lastFocus && lastFocus.focus) lastFocus.focus(); });
 
 /* ---------- nav / hash ---------- */
@@ -2309,12 +2513,15 @@ function startDecor(){
   if(reduced){ frame(4); } else { raf=requestAnimationFrame(loop); }
 }
 
-/* ---------- 更新日志：按日期分组 ---------- */
+/* ---------- 更新日志：翻书（StPageFlip 软页引擎） ---------- */
 const LOG_URL = "data/changelog.json";
 const logDlg = document.getElementById("logDlg");
-const KIND_C = {"功能":"var(--accent-2)","界面":"var(--accent)","内容":"#5f7a73","配置":"var(--gold)","重大":"var(--accent-deep)"};
+const KIND_C = {"功能":"#a8758c","界面":"#b98f7a","内容":"#5f7a73","配置":"#a8906a","重大":"#8d5c6c"};
 const WEEK = ["周日","周一","周二","周三","周四","周五","周六"];
+const STAR_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.6l2.5 5.6 6.1.7-4.5 4.2 1.2 6-5.3-2.9-5.3 2.9 1.2-6-4.5-4.2 6.1-.7Z"/></svg>';
 let LOG = null;
+let PF = null;
+const BOOK = { pages: [], at: 0, toc: [], meta: {count:0, days:0, from:"", to:""} };
 
 function dateLabel(day){
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(day);
@@ -2322,8 +2529,6 @@ function dateLabel(day){
   const d = new Date(day+"T00:00:00+08:00");
   return (+m[2])+"月"+(+m[3])+"日 · "+WEEK[d.getDay()];
 }
-
-/* 时间统一解析：兼容 "2026-11-16T21:29:00+08:00" 与 "2026-11-16 21:29" 两种写法 */
 function logMs(at){
   const v = Date.parse(String(at).replace(" ", "T"));
   return Number.isFinite(v) ? v : 0;
@@ -2333,50 +2538,264 @@ function logHM(at){
   return m ? m[1] + ":" + m[2] : "—";
 }
 
+/* --- 页内节点 --- */
+function dayNode(day, total, anyImp, cont){
+  const el = document.createElement("div");
+  el.className = "bk-day";
+  el.innerHTML = "<b>"+dateLabel(day)+"</b>" + (cont?'<span class="bk-cont">续</span>':"") +
+    (anyImp?'<span class="bk-imp">含重要</span>':"") +
+    (cont ? "" : '<span class="bk-cnt">'+total+' 项</span>');
+  return el;
+}
+function itemNode(e){
+  const isImp = !!e.important;
+  const el = document.createElement("div");
+  el.className = "bk-item" + (isImp ? " imp" : "");
+  el.innerHTML =
+    '<div class="bk-line"><span class="bk-time">'+logHM(e.at)+'</span>'+
+    '<span class="bk-title">'+esc(e.title)+'</span>'+
+    '<span class="bk-kind" style="color:'+(KIND_C[e.kind]||"#8a7c82")+'">'+esc(e.kind)+'</span>'+
+    (isImp?'<span class="bk-kind imp">重要</span>':"")+
+    '<button class="bk-flag'+(isImp?' on':'')+'" type="button" data-at="'+esc(e.at)+'" aria-pressed="'+(isImp?'true':'false')+'" aria-label="'+(isImp?'取消重要':'标记为重要')+'">'+STAR_SVG+'</button></div>'+
+    (e.note?'<div class="bk-note">'+esc(e.note)+'</div>':"");
+  return el;
+}
+
+/* --- 按天分页：一天另起一页，一天太满就续页，日期不与他人共页 --- */
+function buildPages(entries){
+  const groups = {};
+  entries.forEach(e=>{ const d = String(e.at).slice(0,10); (groups[d] || (groups[d]=[])).push(e); });
+  const days = Object.keys(groups).sort().reverse();
+  BOOK.meta = { count: entries.length, days: days.length, from: days[days.length-1] || "", to: days[0] || "" };
+
+  const pages = [{type:"art"}, {type:"title"}, {type:"front"}];
+  const measure = document.getElementById("logMeasure");
+  const box = document.getElementById("logBook");
+  const single = window.matchMedia("(max-width: 760px)").matches;
+  const pageW = (box.clientWidth || 1140) / (single ? 1 : 2);
+  const w = Math.max(180, pageW - 56);
+  measure.style.width = w + "px";
+  const budget = Math.max(220, (box.clientHeight || 600) - 52 - 34);
+  const H = (node, extra) => {
+    measure.appendChild(node);
+    const v = node.getBoundingClientRect().height + (extra || 0);
+    measure.removeChild(node);
+    return v;
+  };
+  let cur = null, used = 0;
+  const newPage = (day, cont) => {
+    cur = {type:"content", day:day, cont:!!cont, items:[], ats:[], dayTotal:groups[day].length};
+    pages.push(cur);
+    const head = dayNode(day, cur.dayTotal, groups[day].some(e=>!!e.important), cont);
+    used = H(head, 11);
+  };
+
+  days.forEach(day=>{
+    const list = groups[day].slice().sort((a,b)=>logMs(b.at)-logMs(a.at));
+    newPage(day, false);
+    list.forEach(e=>{
+      const node = itemNode(e);
+      const hh = H(node, 0);
+      if(used + hh > budget && cur.items.length > 0){ newPage(day, true); }
+      cur.items.push(e);
+      cur.ats.push(e.at);
+      used += hh;
+    });
+  });
+
+  /* 收尾：加上封底；页数不对齐时补一页落款页，让封底落在右页 */
+  pages.push({type:"back"});
+  if(pages.length % 2 === 1) pages.splice(pages.length - 1, 0, {type:"colophon"});
+
+  /* 正文编号：封面/封底/落款页不带页码，从正文第一页（写在前面）起算 */
+  const toc = [];
+  let lastDay = "", no = 0;
+  pages.forEach(pg => {
+    if(pg.type !== "front" && pg.type !== "content") return;
+    no++; pg.no = no;
+    if(pg.type === "content" && pg.day && pg.day !== lastDay){
+      toc.push({ day: pg.day, page: no });
+      lastDay = pg.day;
+    }
+  });
+  BOOK.bodyTotal = no;
+  BOOK.toc = toc;
+  return pages;
+}
+
+/* --- 页面内容 --- */
+const MOON_SVG = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M16.2 3.1a8.9 8.9 0 1 0 4.4 15.4A9.3 9.3 0 0 1 16.2 3.1Z" fill="currentColor"/></svg>';
+
+function coverArtHTML(){
+  return '<div class="bk-art">'+
+    '<img src="assets/book-cover-art.webp" srcset="assets/book-cover-art-sm.webp 760w, assets/book-cover-art.webp 1200w" sizes="(max-width:760px) 100vw, 570px" alt="御姐捏着捣乱的萝莉的脸，少女在沙发上安静写手账">'+
+    '<div class="shade"></div>'+
+    '<span class="seal" aria-hidden="true">'+MOON_SVG+'</span>'+
+    '<span class="cap">汐音的手账　·　2026</span>'+
+    '</div>';
+}
+function coverTitleHTML(){
+  const m = BOOK.meta;
+  const range = (m.from && m.to) ? (dateLabel(m.from).replace(" · "," ")+" — "+dateLabel(m.to).replace(" · "," ")) : "";
+  return '<div class="bk-titlepage">'+
+    '<span class="frame" aria-hidden="true"></span>'+
+    '<span class="stars" aria-hidden="true"></span>'+
+    '<span class="orb" aria-hidden="true">'+MOON_SVG+'</span>'+
+    '<span class="yr" aria-hidden="true">2026　·　手账</span>'+
+    '<div class="tp-kicker">ZHICHAO　·　汐音的手账</div>'+
+    '<div class="tp-mid">'+
+      '<h3>汐音的<br>更新手账</h3>'+
+      '<div class="tp-rule"><i></i>'+MOON_SVG+'</div>'+
+      '<div class="tp-sub">一页一天，翻过去就是这几天的日子</div>'+
+    '</div>'+
+    '<div class="tp-bot">'+
+      '<div class="tp-meta">'+m.count+' 条更新　·　'+m.days+' 天　·　'+range+'</div>'+
+      '<div class="tp-hint">从右边翻页开始　→</div>'+
+    '</div>'+
+    '</div>';
+}
+function coverBackHTML(){
+  const m = BOOK.meta;
+  return '<div class="bk-art back">'+
+    '<img src="assets/book-cover-back.webp" alt="萝莉撒了满屋纸页被御姐拎住，少女在沙发上安静写字">'+
+    '<div class="shade"></div>'+
+    '<div class="bc">'+
+      '<div class="bc-k">ZHICHAO　·　汐音的手账</div>'+
+      '<div class="bc-t">这几天的日子，就先记到这一页</div>'+
+      '<div class="bc-m">'+m.count+' 条更新　·　'+m.days+' 天　·　2026</div>'+
+    '</div>'+
+    '</div>';
+}
+function colophonHTML(){
+  return '<div class="bk-colophon">'+
+    '<div class="cl-k">ZHICHAO　·　汐音的手账</div>'+
+    '<div class="cl-t">这一本，还会一直写下去</div>'+
+    '<div class="cl-rule"><i></i>'+MOON_SVG+'<i></i></div>'+
+    '<div class="cl-m">汐音整理　·　2026</div>'+
+    '<div class="cl-note">日子记在这里，改动也记在这里；<br>翻到这一页，就先合上吧。</div>'+
+    '</div>';
+}
+function frontHTML(){
+  const m = BOOK.meta;
+  return '<div class="bk-front">'+
+    '<div class="ft-k">写在前面</div>'+
+    '<h4>这几天，汐音改了些什么</h4>'+
+    '<p>这里按天分册：一天从新的一页开始，一天里改动多，就接着下一页写下去，不会和别的日子挤在同一页。</p>'+
+    '<p>每一条右边的星星可以点亮：点亮就是「重要更新」，条目会亮起金边，日期页上多一枚「含重要」的小印章；再点一下恢复普通。</p>'+
+    '<ul class="bk-toc">'+(BOOK.toc||[]).map(t=>'<li><i>'+dateLabel(t.day).replace(" · "," ")+'</i><span>第 '+t.page+' 页</span></li>').join("")+'</ul>'+
+    '<p class="bk-front-tip">重要更新会亮成金色；点书的边缘翻页，或按 ← → 键。</p>'+
+    '</div>';
+}
+function pageNoHTML(no){
+  if(typeof no !== "number") return "";
+  return '<span class="bk-pageno">'+no+' / '+BOOK.bodyTotal+'</span>';
+}
+function renderSheet(el, page, index){
+  if(!el || !page) return;
+  el.classList.toggle("is-art", page.type === "art");
+  el.classList.toggle("is-title", page.type === "title");
+  el.classList.toggle("is-back", page.type === "back");
+  if(page.type === "art"){ el.innerHTML = coverArtHTML(); return; }
+  if(page.type === "title"){ el.innerHTML = coverTitleHTML(); return; }
+  if(page.type === "back"){ el.innerHTML = coverBackHTML(); return; }
+  if(page.type === "colophon"){ el.innerHTML = colophonHTML(); return; }
+  if(page.type === "front"){ el.innerHTML = frontHTML() + pageNoHTML(page.no); return; }
+  const anyImp = page.items.some(e => !!e.important);
+  const head = dayNode(page.day, page.dayTotal || page.items.length, anyImp, page.cont);
+  el.innerHTML = head.outerHTML + page.items.map(e => itemNode(e).outerHTML).join("") + pageNoHTML(page.no);
+}
+function sheetFor(page, index){
+  const el = document.createElement("div");
+  el.className = "bk-sheet";
+  renderSheet(el, page, index);
+  return el;
+}
+
+/* --- 装订：交给 StPageFlip 渲染软页翻动 --- */
+function mountBook(){
+  if(PF){ try{ PF.destroy(); }catch(e){} PF = null; }
+  const wrap = logDlg.querySelector(".book-wrap");
+  let box = document.getElementById("logBook");
+  if(!box || !wrap.contains(box)){
+    box = document.createElement("div");
+    box.id = "logBook";
+    box.className = "book";
+    const anchor = wrap.querySelector(".book-hit");
+    wrap.insertBefore(box, anchor || null);
+  }
+  box.innerHTML = "";
+  const sheets = BOOK.pages.map(sheetFor);
+  sheets.forEach(el => box.appendChild(el));
+
+  PF = new St.PageFlip(box, {
+    width: 540, height: 600, size: "stretch",
+    minWidth: 260, maxWidth: 600, minHeight: 360, maxHeight: 760,
+    showCover: false, usePortrait: true,
+    flippingTime: 700, drawShadow: true, maxShadowOpacity: 0.42,
+    mobileScrollSupport: false, clickEventForward: true,
+    disableFlipByClick: true, showPageCorners: false,
+    startPage: BOOK.at
+  });
+  PF.loadFromHTML(box.querySelectorAll(".bk-sheet"));
+  PF.on("flip", e => {
+    if(typeof e.data === "number"){ BOOK.at = e.data; }
+  });
+  let prevState = "";
+  PF.on("changeState", e => {
+    const s = e.data;
+    try{
+      if(s === "flipping"){
+        SFX.flip();                                  /* 程序化翻页：翻页沙沙声 */
+      }else if(s === "user_fold" || s === "fold_corner"){
+        SFX.dragStart();                             /* 开始拖动：持续摩擦声 */
+      }else if(s === "read"){
+        SFX.dragStop();                              /* 拖动结束：收声 */
+        if(prevState === "user_fold" || prevState === "fold_corner") SFX.landing();
+      }
+    }catch(x){}
+    prevState = s;
+  });
+  if(BOOK.at > 0){ try{ PF.turnToPage(BOOK.at); }catch(e){} }
+}
+
+function currentIndex(){
+  if(!PF) return BOOK.at || 0;
+  try{ return PF.getCurrentPageIndex() || 0; }catch(e){ return BOOK.at || 0; }
+}
+function turn(dir){
+  if(!PF) return;
+  if(dir > 0) PF.flipNext(); else PF.flipPrev();
+}
+
+/* --- 打开日志 --- */
 async function openLog(){
-  /* 每次打开都回服务器取最新一份，避免页面开着不动时看到旧日志 */
+  const keep = BOOK.at;
   try{
     const r = await fetch(LOG_URL + "?t=" + Date.now(), {cache:"no-store"});
     if(r.ok) LOG = await r.json();
   }catch(e){ LOG = LOG || { entries: [] }; }
-  const entries = (LOG.entries || []).slice().sort((a,b)=>logMs(b.at) - logMs(a.at));
-  const groups = {};
-  entries.forEach(e=>{
-    const day = String(e.at).slice(0,10);
-    (groups[day] || (groups[day]=[])).push(e);
-  });
-  const days = Object.keys(groups).sort().reverse();
-  document.getElementById("logList").innerHTML = entries.length
-    ? days.map(day=>{
-        const list = groups[day].sort((a,b)=>logMs(b.at) - logMs(a.at));
-        const major = list.some(e=>!!e.important);
-        const head = '<div class="log-date-head">' +
-          '<svg class="d-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 13a8 8 0 1 1-9-9 7 7 0 0 0 9 9Z"/></svg>' +
-          "<b>"+dateLabel(day)+"</b>" +
-          (major?'<span class="d-major">含重要更新</span>':"") +
-          '<span class="d-cnt">'+list.length+" 项</span></div>";
-        const STAR = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.6l2.5 5.6 6.1.7-4.5 4.2 1.2 6-5.3-2.9-5.3 2.9 1.2-6-4.5-4.2 6.1-.7Z"/></svg>';
-        const items = list.map(e=>{
-          const hm = logHM(e.at).match(/(\d{2}):(\d{2})/);
-          const isImp = !!e.important;
-          return '<div class="log-item'+(isImp?' imp':'')+'"><div class="log-time"><b>'+(hm?hm[1]+":"+hm[2]:"—")+"</b>"+day.slice(5).replace("-","/")+"</div>"+
-            '<div><div class="log-t">'+esc(e.title)+
-            '<span class="log-kind" style="color:'+(KIND_C[e.kind]||"var(--muted)")+'">'+esc(e.kind)+"</span>"+
-            (isImp?'<span class="log-kind imp">重要</span>':"")+
-            '<button class="log-flag'+(isImp?' on':'')+'" type="button" data-at="'+esc(e.at)+'" aria-pressed="'+(isImp?'true':'false')+'" title="'+(isImp?'取消重要':'标记为重要')+'" aria-label="'+(isImp?'取消重要':'标记为重要')+'">'+STAR+'</button>'+
-            "</div>"+
-            (e.note?'<div class="log-note">'+esc(e.note)+"</div>":"")+"</div></div>";
-        }).join("");
-        return '<div class="log-date">'+head+'<div class="log-group">'+items+"</div></div>";
-      }).join("")
-    : '<div class="empty" style="padding:20px 0">暂无记录</div>';
   if(!logDlg.open) logDlg.showModal();
+  await new Promise(r=>setTimeout(r,60));
+  const entries = (LOG.entries || []).slice().sort((a,b)=>logMs(b.at) - logMs(a.at));
+  BOOK.pages = buildPages(entries);
+  BOOK.at = Math.max(0, Math.min(keep, BOOK.pages.length - 1));
+  mountBook();
 }
+
 document.getElementById("logBtn").onclick = openLog;
-/* 一键标记重要 / 取消：写回服务器同一份 changelog.json */
-document.getElementById("logList").addEventListener("click", async (e) => {
-  const btn = e.target.closest ? e.target.closest(".log-flag") : null;
+document.getElementById("hitR").onclick = () => turn(1);
+document.getElementById("hitL").onclick = () => turn(-1);
+document.addEventListener("keydown", e => {
+  if(!logDlg.open) return;
+  if(e.key === "ArrowRight"){ e.preventDefault(); turn(1); }
+  if(e.key === "ArrowLeft"){ e.preventDefault(); turn(-1); }
+});
+
+/* 一键标记重要 / 取消：就地更新当前这页，不打断翻页位置 */
+document.getElementById("logBook").addEventListener("click", async (e) => {
+  const btn = e.target.closest ? e.target.closest(".bk-flag") : null;
   if (!btn || btn.disabled) return;
+  e.stopPropagation();
   const at = btn.getAttribute("data-at");
   if (!at) return;
   const next = btn.getAttribute("aria-pressed") !== "true";
@@ -2388,14 +2807,20 @@ document.getElementById("logList").addEventListener("click", async (e) => {
       body: JSON.stringify({at: at, important: next})
     });
     if (!r.ok) throw new Error("HTTP " + r.status);
-    await openLog();
+    const entry = (LOG && LOG.entries || []).find(x => x.at === at);
+    if(entry){ if(next) entry.important = true; else delete entry.important; }
+    const idx = BOOK.pages.findIndex(p => p.type === "content" && p.ats && p.ats.indexOf(at) >= 0);
+    const sheetEl = btn.closest(".bk-sheet");
+    if(idx >= 0 && sheetEl){
+      renderSheet(sheetEl, BOOK.pages[idx], idx);
+    }
   }catch(err){
     btn.disabled = false;
     if (typeof toast === "function") toast("标记没存上，再试一次？");
   }
 });
 document.getElementById("logClose").onclick = () => logDlg.close();
-logDlg.addEventListener("click", e => { if(e.target === logDlg) logDlg.close(); });
+logDlg.addEventListener("close", () => { try{ SFX.dragStop(); }catch(e){} });
 
 /* ---------- 汐音的星月手账：到访记录 + 每日打卡 ----------
    数据落在看板娘的记忆里（memory.visits，随聊天记忆一起同步到服务器）：
@@ -2843,7 +3268,11 @@ function enterApp(){
   document.getElementById("gateWrap").hidden = true;
   document.getElementById("app").hidden = false;
   // 登录后才回填受保护图片（HTML 中以 data-src 占位，未登录时浏览器不会发起请求）
-  document.querySelectorAll("img[data-src]").forEach(img => { img.src = img.dataset.src; });
+  // 夜间主题下优先取 data-src-night（哥特礼服版），没有则回落到日间图
+  document.querySelectorAll("img[data-src]").forEach(img => {
+    const night = document.documentElement.getAttribute("data-zc-theme") === "dark";
+    img.src = (night && img.dataset.srcNight) || img.dataset.src;
+  });
   initChatAssets();   // 立绘/语音等聊天资产延迟到登录后再预加载
   startDecor();
   load();
@@ -2851,6 +3280,20 @@ function enterApp(){
   ckBoot();           // 星月手账：记一次到访脚印，并渲染今天的打卡状态
   zcBoot();
 }
+
+/* 夜间主题：登录后首屏立绘随 data-zc-theme 在日间图 / 哥特礼服图之间切换。
+   未登录（图片未回填）时不动，避免触发受保护资源的匿名请求。 */
+(function watchMascotNight(){
+  const html = document.documentElement;
+  new MutationObserver(() => {
+    const app = document.getElementById("app");
+    if (!app || app.hidden) return;
+    document.querySelectorAll("img[data-src][data-src-night]").forEach(img => {
+      const want = html.getAttribute("data-zc-theme") === "dark" ? img.dataset.srcNight : img.dataset.src;
+      if (img.getAttribute("src") && img.getAttribute("src") !== want) img.src = want;
+    });
+  }).observe(html, { attributes: true, attributeFilter: ["data-zc-theme"] });
+})();
 
 function backToGate(){
   const input = document.getElementById("code");
@@ -3344,7 +3787,6 @@ async function openChat(){
   chatSide.classList.remove("speaking");
 }
 document.getElementById("chatClose").onclick = closeChat;
-chatOverlay.addEventListener("click", e => { if (e.target === chatOverlay) closeChat(); });
 document.addEventListener("keydown", e => {
   if (e.key === "Escape" && !chatOverlay.hidden) closeChat();
 });
@@ -3761,7 +4203,7 @@ async function sendChat(){
 }
 </script>
 <script defer src="js/settings.js?v=20261116c"></script>
-<script defer src="js/mascot.js?v=20261116c"></script>
+<script defer src="js/mascot.js?v=20261118a"></script>
 <script defer src="js/clock.js?v=20261117b"></script>
 </body>
 </html>

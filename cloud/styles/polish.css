@@ -1,0 +1,544 @@
+/* ==========================================================================
+   知潮 · 润色层（polish.css）
+   ------------------------------------------------------------------------
+   定位：在 theme / mascot / checkin / clock / beautify 之后加载的「追加式」覆盖层。
+   原则：
+   - 不改动 index.html 既有结构与类名，只叠加视觉；
+   - 不改写既有模块的变量与规则，只做补充；
+   - 保持二次元莫兰迪（粉紫 / 柔雾 / 磨砂 / 星光月牙）氛围不变；
+   - 新增 class 统一 zc-p- 前缀；
+   - 尊重 prefers-reduced-motion。
+   ========================================================================== */
+
+/* ==========================================================================
+   1. 润色层私有变量
+   ========================================================================== */
+:root {
+  --zc-p-aurora-1: color-mix(in srgb, #f6c6d6 46%, transparent);
+  --zc-p-aurora-2: color-mix(in srgb, #cfc2ea 42%, transparent);
+  --zc-p-aurora-3: color-mix(in srgb, #b9d8dd 30%, transparent);
+  --zc-p-aurora-4: color-mix(in srgb, #f3dcc0 26%, transparent);
+  --zc-p-rainbow: linear-gradient(120deg,
+    color-mix(in srgb, #ffd9e4 70%, transparent),
+    color-mix(in srgb, #e4d3ff 66%, transparent),
+    color-mix(in srgb, #c9ecf0 58%, transparent),
+    color-mix(in srgb, #ffe9c9 52%, transparent));
+  --zc-p-edge: linear-gradient(140deg,
+    color-mix(in srgb, #fff 72%, transparent),
+    transparent 38%,
+    color-mix(in srgb, var(--accent) 42%, transparent) 72%,
+    color-mix(in srgb, var(--accent-2) 34%, transparent));
+  --zc-p-hairline: 1px;
+}
+
+/* ==========================================================================
+   2. 极光背景层：慢速漂移的柔光带，强化「柔雾」纵深
+   ========================================================================== */
+.zc-p-aurora {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.zc-p-aurora i {
+  position: absolute;
+  display: block;
+  border-radius: 50%;
+  filter: blur(46px);
+  opacity: .62;
+  will-change: transform;
+}
+.zc-p-aurora i:nth-child(1) {
+  width: 46vw; height: 34vw;
+  left: -8vw; top: -6vw;
+  background: radial-gradient(circle, var(--zc-p-aurora-1), transparent 68%);
+  animation: zcPAurora1 34s ease-in-out infinite;
+}
+.zc-p-aurora i:nth-child(2) {
+  width: 40vw; height: 30vw;
+  right: -10vw; top: 12vh;
+  background: radial-gradient(circle, var(--zc-p-aurora-2), transparent 68%);
+  animation: zcPAurora2 42s ease-in-out infinite;
+}
+.zc-p-aurora i:nth-child(3) {
+  width: 44vw; height: 28vw;
+  left: 22vw; bottom: -14vh;
+  background: radial-gradient(circle, var(--zc-p-aurora-3), transparent 70%);
+  animation: zcPAurora3 50s ease-in-out infinite;
+}
+.zc-p-aurora i:nth-child(4) {
+  width: 26vw; height: 22vw;
+  right: 16vw; bottom: 6vh;
+  background: radial-gradient(circle, var(--zc-p-aurora-4), transparent 70%);
+  animation: zcPAurora4 38s ease-in-out infinite;
+}
+@keyframes zcPAurora1 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50%      { transform: translate3d(6vw, 4vh, 0) scale(1.12); }
+}
+@keyframes zcPAurora2 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1.05); }
+  50%      { transform: translate3d(-7vw, 6vh, 0) scale(.94); }
+}
+@keyframes zcPAurora3 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50%      { transform: translate3d(5vw, -5vh, 0) scale(1.1); }
+}
+@keyframes zcPAurora4 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(.96); }
+  50%      { transform: translate3d(-5vw, -4vh, 0) scale(1.08); }
+}
+html[data-zc-theme="dark"] .zc-p-aurora { opacity: .78; }
+html[data-zc-theme="dark"] .zc-p-aurora i { opacity: .5; }
+
+/* ==========================================================================
+   3. 玻璃面板：彩色折射描边 + 内侧柔光
+   ========================================================================== */
+.panel,
+.scard,
+.share-box,
+.dlg-box,
+.rdr {
+  isolation: isolate;
+}
+
+/* 折射描边：用 mask 抠出 1px 环，颜色取自粉紫彩虹 */
+.panel::after,
+.scard::after,
+.share-box::after,
+.dlg-box::after,
+.rdr::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: var(--zc-p-hairline);
+  background: var(--zc-p-edge);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: .75;
+  pointer-events: none;
+  transition: opacity .3s ease;
+  z-index: 1;
+}
+.panel:hover::after,
+.scard:hover::after,
+.share-box:hover::after,
+.dlg-box:hover::after {
+  opacity: 1;
+}
+html[data-zc-theme="dark"] .panel::after,
+html[data-zc-theme="dark"] .scard::after,
+html[data-zc-theme="dark"] .share-box::after,
+html[data-zc-theme="dark"] .dlg-box::after,
+html[data-zc-theme="dark"] .rdr::after {
+  background: linear-gradient(140deg,
+    color-mix(in srgb, #fff 34%, transparent),
+    transparent 40%,
+    color-mix(in srgb, var(--accent) 46%, transparent) 74%,
+    color-mix(in srgb, var(--accent-2) 40%, transparent));
+  opacity: .6;
+}
+
+/* 面板内柔光：左上角一层极淡的粉雾 */
+.panel::marker { content: none; }
+
+/* ==========================================================================
+   4. 侧边导航：分组缎带 + 选中指示灯
+   ========================================================================== */
+.rail {
+  position: sticky;
+  z-index: 20;
+}
+.rail::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--zc-p-rainbow);
+  opacity: .55;
+  pointer-events: none;
+}
+
+/* 分组标题加一条渐隐细线 */
+.menu-label {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.menu-label::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 34%, transparent), transparent);
+}
+
+/* 导航项左侧指示灯：未选中时也有一点点呼吸 */
+.menu-item .dotc {
+  transition: box-shadow .25s ease, transform .25s ease;
+}
+.menu-item:hover .dotc {
+  transform: scale(1.18);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--c, var(--accent)) 26%, transparent);
+}
+
+/* 选中项：左侧滑出的小月牙 */
+.menu-item.on::before {
+  content: "";
+  position: absolute;
+  left: -2px;
+  top: 50%;
+  width: 3px;
+  height: 0;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #fff, rgba(255, 255, 255, .45));
+  transform: translateY(-50%);
+  animation: zcPMenuBar .34s cubic-bezier(.2, .9, .3, 1.3) forwards;
+}
+@keyframes zcPMenuBar {
+  to { height: 60%; }
+}
+
+/* ==========================================================================
+   5. 品牌区：名字呼吸微光
+   ========================================================================== */
+.brand .logo {
+  position: relative;
+}
+.brand .logo::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 16px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 30%, transparent), transparent 68%);
+  opacity: 0;
+  transition: opacity .3s ease;
+  pointer-events: none;
+}
+.brand:hover .logo::after { opacity: 1; }
+
+/* ==========================================================================
+   6. 页头：缎带分隔 + 副标题呼吸点
+   ========================================================================== */
+.page-head {
+  padding-bottom: 14px;
+  border-bottom: 1px solid transparent;
+  background:
+    linear-gradient(90deg, transparent, color-mix(in srgb, var(--line-soft) 90%, transparent) 12%,
+      color-mix(in srgb, var(--line-soft) 90%, transparent) 88%, transparent) bottom / 100% 1px no-repeat;
+}
+.page-head::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 108px;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2) 72%, transparent);
+  opacity: .7;
+}
+#tagline { position: relative; }
+#tagline::before {
+  content: "";
+  display: inline-block;
+  width: 5px; height: 5px;
+  margin-right: 7px;
+  border-radius: 50%;
+  vertical-align: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent);
+  animation: zcPPing 2.8s ease-out infinite;
+}
+@keyframes zcPPing {
+  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent); }
+  70%  { box-shadow: 0 0 0 7px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+/* ==========================================================================
+   7. 头条卡：更强的玻璃与角标光晕
+   ========================================================================== */
+.spot-body {
+  box-shadow: var(--shadow), 0 0 0 1px color-mix(in srgb, var(--c, var(--accent)) 12%, transparent);
+}
+.spot-kicker {
+  position: relative;
+}
+.spot-kicker::before {
+  content: "";
+  position: absolute;
+  left: -10px;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  background: var(--c, var(--accent));
+  box-shadow: 0 0 8px var(--c, var(--accent));
+}
+.spot-fig {
+  box-shadow: 0 10px 24px -14px color-mix(in srgb, var(--c, var(--accent)) 70%, transparent);
+}
+.spot-row:hover {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c, var(--accent)) 20%, transparent);
+}
+
+/* ==========================================================================
+   8. 列表行：热力条 + 悬停柔光铺底
+   ========================================================================== */
+.row {
+  position: relative;
+  overflow: hidden;
+}
+.row::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg,
+    color-mix(in srgb, var(--c, var(--accent)) 13%, transparent),
+    transparent 58%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .24s ease;
+  z-index: 0;
+}
+.row:hover::after { opacity: 1; }
+.row > * { position: relative; z-index: 1; }
+
+/* 右侧热度条：细到几乎看不见，悬停时点亮 */
+.row .rscore {
+  position: relative;
+}
+.row .rscore::after {
+  content: "";
+  position: absolute;
+  right: -6px;
+  top: 50%;
+  width: 2px;
+  height: 0;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--c, var(--accent)), transparent);
+  transform: translateY(-50%);
+  transition: height .28s ease;
+}
+.row:hover .rscore::after { height: 26px; }
+
+/* ==========================================================================
+   9. 时间分组：小月牙标记
+   ========================================================================== */
+.tgroup .tm::before {
+  content: "";
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 34%, var(--accent), transparent 58%),
+    radial-gradient(circle at 66% 66%, var(--accent-2), transparent 58%);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+/* ==========================================================================
+   10. 按钮：流光边框 + 悬浮高光
+   ========================================================================== */
+.rgo,
+.pg-num.on,
+.chat-send {
+  position: relative;
+  overflow: hidden;
+}
+.rgo::before,
+.chat-send::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--zc-p-rainbow);
+  opacity: 0;
+  transition: opacity .35s ease;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+}
+.rgo:hover::before,
+.chat-send:hover::before { opacity: .35; }
+
+.pg-num.on::before {
+  content: "";
+  position: absolute;
+  left: -120%;
+  top: 0;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .55), transparent);
+  transform: skewX(-18deg);
+  animation: zcPPageSheen 3.6s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes zcPPageSheen {
+  0%, 62% { left: -120%; }
+  100%    { left: 150%; }
+}
+
+/* ==========================================================================
+   11. 侧栏卡片：小标题图标微动 + 计数发光
+   ========================================================================== */
+.scard h3 svg {
+  transition: transform .3s cubic-bezier(.2, .9, .3, 1.4), filter .3s;
+}
+.scard:hover h3 svg {
+  transform: rotate(-8deg) scale(1.12);
+  filter: drop-shadow(0 0 7px color-mix(in srgb, var(--accent) 70%, transparent));
+}
+.ov-num b {
+  text-shadow: 0 2px 14px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+/* ==========================================================================
+   12. 弹窗：顶部彩带 + 缩放呼吸
+   ========================================================================== */
+.rdr::before {
+  background: var(--zc-p-rainbow) !important;
+  opacity: .8;
+}
+.rdr, .share-box, .dlg-box {
+  animation: zcPBreath 5.5s ease-in-out infinite;
+}
+@keyframes zcPBreath {
+  0%, 100% { box-shadow: var(--shadow-lift), 0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent); }
+  50%      { box-shadow: var(--shadow-lift), 0 0 26px -10px color-mix(in srgb, var(--accent) 55%, transparent); }
+}
+
+/* ==========================================================================
+   13. 顶部滚动进度条（由 polish.js 驱动）
+   ========================================================================== */
+#zcPProgress {
+  position: fixed;
+  top: 0; left: 0;
+  height: 3px;
+  width: 0;
+  z-index: 95;
+  border-radius: 0 999px 999px 0;
+  background: var(--zc-p-rainbow);
+  box-shadow: 0 0 12px -2px color-mix(in srgb, var(--accent) 70%, transparent);
+  opacity: 0;
+  transition: opacity .3s ease;
+  pointer-events: none;
+}
+#zcPProgress.on { opacity: 1; }
+
+/* ==========================================================================
+   14. 入场揭示（由 polish.js 添加 .zc-p-in）
+   ========================================================================== */
+.zc-p-reveal {
+  opacity: 0;
+  transform: translateY(14px);
+}
+.zc-p-reveal.zc-p-in {
+  animation: zcPReveal .6s cubic-bezier(.2, .8, .3, 1) forwards;
+}
+@keyframes zcPReveal {
+  to { opacity: 1; transform: none; }
+}
+
+/* ==========================================================================
+   15. 焦点可见性统一
+   ========================================================================== */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 70%, transparent);
+  outline-offset: 2px;
+  border-radius: 10px;
+}
+
+/* ==========================================================================
+   16. 页脚：极淡的渐隐遮罩
+   ========================================================================== */
+.foot {
+  position: relative;
+  padding-top: 20px;
+}
+.foot::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 26%, transparent) 30%,
+    color-mix(in srgb, var(--accent-2) 26%, transparent) 70%, transparent);
+  opacity: .8;
+}
+
+/* ==========================================================================
+   17. 聊天窗口：侧栏彩晕 + 输入区高光
+   ========================================================================== */
+.chat-side-spark {
+  background:
+    radial-gradient(circle at 50% 22%, rgba(255, 255, 255, .6), transparent 60%),
+    radial-gradient(circle at 20% 78%, color-mix(in srgb, var(--zc-b-sakura) 40%, transparent), transparent 64%),
+    radial-gradient(circle at 82% 66%, color-mix(in srgb, var(--zc-b-sakura-2) 36%, transparent), transparent 64%);
+}
+.chat-head {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 60%, transparent), transparent);
+}
+.chat-inputbar {
+  background: linear-gradient(0deg, color-mix(in srgb, var(--accent-soft) 46%, transparent), transparent);
+}
+.chat-card {
+  box-shadow: var(--shadow-lift), 0 0 0 1px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+/* ==========================================================================
+   18. 口令门：卡片描边 + 标题微光呼吸
+   ========================================================================== */
+#gate {
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-lift), 0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+#gate::after {
+  content: "";
+  position: absolute;
+  left: 6%; right: 6%;
+  top: 0;
+  height: 2px;
+  background: var(--zc-p-rainbow);
+  opacity: .7;
+  pointer-events: none;
+}
+#gate .gsub {
+  position: relative;
+}
+#gate .gsub::after {
+  content: "";
+  display: block;
+  width: 46px;
+  height: 1px;
+  margin: 9px auto 0;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: .55;
+}
+
+/* ==========================================================================
+   19. 减弱动效
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  .zc-p-aurora { display: none; }
+  .zc-p-aurora i,
+  .menu-item.on::before,
+  .pg-num.on::before,
+  #tagline::before,
+  .panel::after,
+  .scard::after { animation: none !important; }
+  .rdr, .share-box, .dlg-box { animation: none !important; }
+  .zc-p-reveal { opacity: 1; transform: none; }
+  .zc-p-reveal.zc-p-in { animation: none !important; }
+  .row .rscore::after { transition: none !important; }
+  #zcPProgress { display: none; }
+}
