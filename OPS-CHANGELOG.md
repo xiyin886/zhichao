@@ -1060,6 +1060,15 @@
 - **验证**：CSS 内 `../assets/` 生效、index 引用同步为 `v=20261119e`；线上该图路径存在。
 - **边界**：只改这一行，未动样式规则与布局。
 
+## 2026-11-19 15:22（Asia/Shanghai）｜云电脑侧 changelog 副本与线上对齐（补记）
+
+- **记录来源**：这条原本是云电脑工作副本上的一处未提交改动，发布时与之冲突，已从工作区还原；内容在此补记，避免丢失。
+- **事实**：云电脑 `cloud/data/changelog.json` 当时只有 132 条，落后线上 4 条（13:26 拆分 / 14:20 发布通道 / 14:55 素材归档 / 15:10 修 404）。若跟着整包发布，会把线上这 4 条覆盖回旧版。
+- **做法**：先备份为 `backups/changelog-local-20261119-1522.json`，再从 `/opt/zhichao/data/changelog.json` 拉回覆盖，`gzip -9 -kf` 重生成 `.gz`。
+- **验证**：136 条、`updatedAt=2026-11-19T15:30:00+08:00`、md5 `dedc81045cf925ae4f12c98ee00ffa15`，与容器副本、站点副本一致。
+- **并行工作线提示**：同期云电脑工作区里有未跟踪的 `backend/`、`assets-source/cover/`、`cloud/assets/cover/book-cover.webp`、`dev/shot-*.png`、`dev/verify-art.cjs`、`live2d-sync-20261115.zip`，属于另一条正在进行的开发线。本次发布未提交、未删除、未改动它们，仍原样留在云电脑工作区。
+- **后续纪律**：多条线共用一个工作副本时，动手前先 `git add/commit`，否则 `git pull` 会因脏工作区被拒；同一时刻只允许一条线修改 `cloud/`，其余线只增不改。
+
 
 
 
