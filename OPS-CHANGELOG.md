@@ -992,7 +992,7 @@
 - **待确认**：云电脑 `/home/user/zhichao` **目前不是 git 仓库**（无 `.git`），需首次 clone/init 后才能 pull；服务器侧代码更新方式（git pull 还是既有 scp 部署）待定。本地存在两个 remote：`github`（z3173737035-maker/zhichao）与 `origin`（gitee zhang-suger/AIHOT），推送目标待定。
 - **边界**：未改线上、未 commit、未删任何磁盘文件。
 
-## 2026-11-19 15:35（Asia/Shanghai）｜代码仓库接入：gitee 为唯一远端，云电脑建仓对齐
+## 2026-11-19 14:05（Asia/Shanghai）｜代码仓库接入：gitee 为唯一远端，云电脑建仓对齐
 
 - **变更类型**：仓库与同步链路接通（首次提交推送 + 云电脑建仓）。不涉及线上部署。
 - **本地**：提交 `2fc631d`「拆分 index 为外链 CSS/JS，落地两角色契约与 Docker 本地同构，数据与代码分通道」，84 项变更（含 `cloud/js/app.js`、`cloud/styles/inline.css`、40.4 MB `cloud/assets`、`docker-compose.yml`、`docs/CONTRACTS.md`、`design/`，以及 4 个数据文件的移出）。推送至 `origin` = `https://gitee.com/zhang-suger/AIHOT.git`，`a199c6e..2fc631d main -> main`。
@@ -1001,6 +1001,17 @@
 - **备份**：操作前已把 `cloud/data`、`.data`、`scripts` 备份到云电脑 `/tmp/zc-backup/`。
 - **未完成**：服务器 `root@120.53.6.132` 的 SSH 连接被限流拒绝（`kex_exchange_identification: Connection closed`），按 HANDOVER 规定不重试，服务器侧尚未建仓/拉取，线上仍为旧代码。
 - **边界**：线上未变；本地工作区在提交后干净。
+
+## 2026-11-19 14:20（Asia/Shanghai）｜线上站点更新到拆分后版本（云电脑 → 服务器 rsync 通道）
+
+- **变更类型**：线上部署（首次通过新链路更新站点）。
+- **关键发现**：服务器 `/opt/zhichao` 是**站点根**，对应仓库里的 `cloud/` 目录，不是仓库根；且该目录无 `.git`（服务器有 git 2.43.0 但层级不匹配，不能照搬云电脑的 `reset --hard`）。
+- **同步方式**：云电脑 `/home/user/zhichao` 先 `git pull` 到 `eb496b0`，再 `rsync -avz --exclude data --exclude art --exclude self-upload ./cloud/ /opt/zhichao/`。实际增量 248 KB（27.5 MB 总量，speedup 65.3），assets/voice 等音频与大图未重复传输。
+- **验证**：`index.html` 4667 行 → **476 行**；外链引用 `styles/inline.css?v=20261119c`、`js/app.js?v=20261119c`；`js/app.js` 136516 B、`styles/inline.css` 80638 B 就位；HTTP 全 200 —— index 7646 B(gz)、inline.css 17823 B(gz)、app.js 45916 B(gz)；`zhichao-web` / `zhichao-memory` 均 Up，未重启。
+- **数据未动（验证）**：服务器 `data/current.json` `e4137b47…`、`data/changelog.json` `1b0ea491…`，同步前后一致；`data/`、`art/`、`self-upload/` 全部排除在同步范围外。
+- **新约束**：服务器**不建 git 仓库**，代码更新一律由云电脑 rsync 下发；数据仍由定时任务 scp 直推。三条链路互不交叉：本地 git push → 云电脑 git pull → 云电脑 rsync 服务器；数据：云电脑定时任务 → scp → 服务器。
+- **运维注意**：服务器 SSH 有连接频率限制，连续 3 次连接即被拒（`kex_exchange_identification`），冷却约 100 秒；批量操作应合并为单次会话。
+- **边界**：未重启容器，未改动 nginx 配置，未触碰后端与鉴权。
 
 
 
