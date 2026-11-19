@@ -2,7 +2,7 @@
 
 你接手的是一个**自用**的中文热点站的内容筛选与写作工作。站点不对外运营，没有读者增长指标，唯一目标是：**让主人每天花两三分钟，就能知道他那几个关注方向上真正值得知道的事**。
 
-请按下面的规格执行。如果你能访问这台机器（Windows，项目在 `E:\AIHOT`），就按「A. 有本机权限」做；如果只能产出文本，就按「B. 无本机权限」做。
+请按下面的规格执行。定时任务实际运行在**云电脑**（Linux，项目根 `/home/user/zhichao`），手工维护在**本地 Windows**（`E:\知潮`），两处是同一份代码。你能访问到哪一处就按对应路径做；只能产出文本，就按「B. 无本机权限」做。
 
 ---
 
@@ -11,18 +11,20 @@
 站点地址 `http://120.53.6.132/`（前端口令门，**2026-11-16 起为服务器端真鉴权**：未登录访问数据/接口/立绘一律 401，不再是纯 UI 遮蔽）。架构非常简单：
 
 ```
-本机生成 cloud/data/current.json  →  scp 到服务器 /opt/zhichao/data/current.json  →  浏览器登录后读静态文件
+云电脑生成 cloud/data/current.json  →  scp 到服务器 /opt/zhichao/data/current.json  →  浏览器登录后读静态文件
 ```
 
-服务器上两个容器：nginx 容器托管 `/opt/zhichao/` 并通过 `auth_request` 做鉴权；`zhichao-memory` 容器（Python 标准库，配置在 `/opt/zhichao-memory/`，服务器端代码副本在本机 `server/` 目录）提供登录签发 HttpOnly 会话 Cookie、聊天记忆与 Kimi 反代。所以**你的全部产出就是一份 JSON 文件**，前端会自动渲染它（前端 `cloud/index.html` 不用你改）。
+服务器上两个容器：nginx 容器托管 `/opt/zhichao/` 并通过 `auth_request` 做鉴权；`zhichao-memory` 容器（Python 标准库，配置在 `/opt/zhichao-memory/`，服务器端代码副本在本机 `server/` 目录）提供登录签发 HttpOnly 会话 Cookie、聊天记忆与 Kimi 反代。所以**你的全部产出就是一份 JSON 文件**，前端会自动渲染它（前端 `cloud/index.html`、`js/app.js`、`styles/inline.css` 都不用你改）。
 
 ## 二、你每天/每轮要做什么
 
 ### 1. 先读三样东西（不要凭记忆）
 
-- `E:\AIHOT\industry\domains.ts` → 里面的 `DOMAINS` 是**方向清单的唯一来源**（key 与 label）。方向可能被增删，不要硬编码数量。
-- `E:\AIHOT\cloud\data\current.json` → 现有数据，照它的字段结构写。
-- `E:\AIHOT\.data\published.json` → 已发过的 `urls` 与 `titles`，去重基线。
+- `industry/domains.ts` → 里面的 `DOMAINS` 是**方向清单的唯一来源**（key 与 label）。方向可能被增删，不要硬编码数量。
+- `cloud/data/current.json` → 现有数据，照它的字段结构写。
+- `.data/published.json` → 已发过的 `urls` 与 `titles`，去重基线。
+
+（以上路径均相对项目根：云电脑 `/home/user/zhichao`，本地 `E:\知潮`。）
 
 ### 2. 七个方向的范围（2026-11 当前状态）
 
@@ -166,11 +168,15 @@
 
 ## 四、怎么推送
 
-### A. 有本机权限（推荐）
+### A. 能访问项目（云电脑或本地，推荐）
 
-写好 `cloud/data/current.json` 后，在 `E:\AIHOT` 下执行：
+写好 `cloud/data/current.json` 后，在项目根执行：
 
 ```bash
+# 云电脑（策展任务实际运行环境，Linux）
+node scripts/push-lighthouse.ts
+
+# 本地 Windows 手工推送
 /d/enviorments/nvm/v24.22.1/node.exe scripts/push-lighthouse.ts
 ```
 
@@ -185,7 +191,7 @@
 访问地址：http://120.53.6.132/
 ```
 
-本机 SSH 免密已配好（`~/.ssh/id_rsa` 的公钥在服务器 `/root/.ssh/authorized_keys`），你不需要处理密码或密钥。**如果脚本报 SSH/SCP 失败，只输出一句错误说明就停，不要反复重试、不要改服务器配置。**
+本机 SSH 免密：云电脑已配好（`~/.ssh/id_ed25519` 公钥在服务器 `/root/.ssh/authorized_keys`）；本地 Windows 侧首次推送若被要求密码，属正常，不要反复重试。你不需要处理或输出任何密钥。**如果脚本报 SSH/SCP 失败，只输出一句错误说明就停，不要反复重试、不要改服务器配置。**
 
 **鉴权上线后的复核（2026-11-16 起必读）**：`/data/` 已加 `auth_request`，脚本最后一步匿名 `curl` 读回会拿到 `HTTP 401`（`server: envoy`）并打印 `FAIL: 线上数据 HTTP 401`，但这**不代表数据失败**——此时校验、scp、预压缩通常都已成功。不要回滚鉴权配置、不要重启容器。改用 ssh 在源站直接验证：`ssh root@120.53.6.132 "python3 -c \"import json;d=json.load(open('/opt/zhichao/data/current.json'));print(len(d['items']),d['generatedAt']))\""`，并比对本机与服务器 `md5sum` 一致即可。鉴权配置 `/opt/zhichao-nginx/default.conf` 与 `zhichao-memory` 容器不在本任务范围，配置内的密钥令牌不得复述、不得外泄。
 
@@ -203,7 +209,7 @@
 
 - 不要在未经要求时改 `cloud/index.html`（前端）；`cloud/data/changelog.json` 是更新日志，**任何变更都必须按第七部分规则追加条目**。
 - 不要调用任何模型 API，不要安装依赖，不要动 `.env`、数据库、Docker、`industry/sources.json`。
-- 不要执行 `docker compose down` / `docker stop`。
+- 不要执行 `docker compose down` / `docker stop`（指服务器上的容器；本地 `E:\知潮` 的 Docker 是开发环境，不在此限）。
 - 不要输出任何密钥、密码、访问口令或 SSH 私钥。
 - 更新日志的**权威副本在容器卷**：`/opt/zhichao-memory/data/changelog.json`（容器内 `/data/changelog.json`，唯一可写）。站点 `cloud/data/changelog.json` 与服务器 `/opt/zhichao/data/changelog.json` 是部署源/备份，**不是线上读的那份**；只改站点那份不会生效，还会在下次部署时覆盖掉网页上标好的「重要」。
 - 不要为了凑量放宽门槛；**一条都没有是完全可以接受的结果**。
@@ -218,6 +224,19 @@
 - 本机权威副本：`server/server-live.py`（线上 800 行，`f5b71a2c…`）、`server/default-live.conf`（线上 207 行，`56ac9c2f…`）；旧 `server.py`/`default.conf` 仅留档、不作权威。
 - 备份目录 `/opt/zhichao-backups/<stamp>/`，任何文件改前先备份。
 
+### A2. 代码同步通道（2026-11-19 起，三条线互不交叉）
+
+| 通道 | 内容 | 做法 |
+|---|---|---|
+| **代码** | `cloud/`（除下述数据文件）、`server/`、`docs/`、`design/`、`dev/` | 本地 commit → `git push origin main`（gitee `zhang-suger/AIHOT`）→ 云电脑 `/home/user/zhichao` `git pull` → 云电脑 `rsync` 下发服务器 |
+| **数据** | `cloud/data/current.json`、`changelog.json` 及各自 `.gz` | 云电脑定时任务「知潮每日策展」（`7 */2 * * *`）产出 → `node scripts/push-lighthouse.ts` → scp 直推 `/opt/zhichao/data/`。**永不经过 git** |
+| **上传** | 用户立绘图 | 落容器 `/data/art/`，不进 git、不进静态目录 |
+
+- **服务器不建 git 仓库**：`/opt/zhichao` 是站点根，对应仓库里 `cloud/` 这一层，层级不匹配，只能由云电脑 rsync 下发；不要照搬云电脑那套 `reset --hard`。
+- **四个数据文件已被 `.gitignore`（`3a` 段）排除**，`git pull` / `reset --hard` / `rsync`（带 `--exclude data`）都不会碰它们；`music.json` 仍入库，属静态配置。
+- 云电脑与服务器上的 `data/`、`art/`、`self-upload/` 是数据真源，任何代码同步都必须显式排除。
+- SSH 有频率限制，**连续第 3 次连接即被拒**（`kex_exchange_identification`），冷却约 100 秒；批量操作合并成单次会话，失败不要连着重试。
+
 ### B. 前端组件设计（主逻辑 `js/app.js`、样式 `styles/inline.css`，禁止再内联）
 - 四个原生 `<dialog>`：`#artDlg`（9 秒 CG + Swiper coverflow 卡组 + 查看全部）、`#artDetailDlg`（单卡大图 + 职责 tag + 服装设定）、`#artGalleryDlg`（六套立绘网格，GLightbox 全屏）、`#artUploadDlg`（上传表单）。
 - 开源库落 `vendor/` 本地、不依赖公网 CDN、随 git 提交：Swiper 11.2.6（coverflow）、GLightbox 3.3.0（灯箱）；`/vendor` 受 `auth_request` 保护，匿名 401。
@@ -226,8 +245,12 @@
 - 组件坑：① dialog 的 top-layer 盖普通 fixed 灯箱，先 `close()` 延迟 90ms 再 `openAt`，关闭回调 `showModal` 恢复；② GLightbox 用 `openAt(idx)` 非 `open`，selector 空则无 slides；③ Swiper `loop` 克隆 DOM，数据一律读固定 `ART_SET` 数组；④ 灯箱重建前先 `destroy()` 旧实例。
 - **资源外链现状（2026-11-19 起）**：原内联样式 78.7 KB → `styles/inline.css`（头部 `preload` 提前请求），原内联脚本 133.3 KB → `js/app.js`（`defer` 加载，执行顺序在 `settings.js`/`mascot.js`/`clock.js` 之前）；`index.html` 由 4667 行/244 KB 降到 476 行/27 KB。**新功能一律写进独立 css/js 文件，禁止再往 `index.html` 写内联 `<style>`/`<script>`**；改动任一文件都要重生成同名 `.gz` 并递增 `?v=` 版本号。
 
-### C. 标准工作流（闭环）
-改源 → 本地预览校验 → 记 md5 → 服务器备份 → scp 上传（不丢散件）→ 文本文件重生成 `.gz`（`gzip_static`）→ nginx 改则 `nginx -t` 后 reload、后端改才 restart 对应容器 → 线上回归（md5 逐项一致、首页 200、匿名受保护资源仍 401、专项验证）→ 写 changelog（权威在 `/data`）+ OPS，日志是线上文件则再部署一次。
+### C. 标准工作流（闭环，2026-11-19 起改走 git）
+
+改源（本地 `E:\知潮`）→ 本地 Docker 同构预览校验（`docker compose up -d`，地址 `http://127.0.0.1:8811`）→ 文本文件重生成同名 `.gz`（`gzip -t` 自检）→ 递增 `?v=` 版本号 → `git commit && git push origin main`（**只推代码与静态资源，`cloud/data` 下四个数据文件不进 git**）→ 云电脑 `git pull` → 云电脑 `rsync -avz --exclude data --exclude art --exclude self-upload ./cloud/ root@120.53.6.132:/opt/zhichao/` → 线上回归（首页 200、`styles/inline.css` 与 `js/app.js` 200、数据 md5 与同步前一致、匿名受保护资源仍 401）→ 写 changelog（权威在 `/data`）+ OPS-CHANGELOG。
+
+- nginx 改则 `nginx -t` 后 reload、后端改才 restart 对应容器；纯静态改动无需重启任何容器。
+- 后端 `server/server-live.py` 改动后，先用 `docker compose restart zhichao-memory` 在本地验证，通过再推 git。
 
 ### D. 注意事项（红线与坑）
 - nginx 只 reload、**不 restart web**；只有改 `server.py` 才 `docker restart zhichao-memory`（会话已持久化不掉线）。禁止 `compose down/stop`、删卷、装依赖、动 `.env`/数据库。

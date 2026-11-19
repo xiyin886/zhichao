@@ -1013,6 +1013,16 @@
 - **运维注意**：服务器 SSH 有连接频率限制，连续 3 次连接即被拒（`kex_exchange_identification`），冷却约 100 秒；批量操作应合并为单次会话。
 - **边界**：未重启容器，未改动 nginx 配置，未触碰后端与鉴权。
 
+## 2026-11-19 14:40（Asia/Shanghai）｜交接文档对齐新链路
+
+- **变更类型**：文档（`HANDOVER-zhichao-curation.md`），不涉及线上。
+- **路径统一**：全文 `E:\AIHOT` → `E:\知潮`；第 2 节的三个读取路径改为相对项目根，并注明两处根目录。
+- **新增 A2「代码同步通道」**：代码（git → gitee → 云电脑 → rsync → 服务器）、数据（云电脑定时任务 → scp）、上传（容器 `/data/art/`）三线表，写明服务器不建 git 仓库及其原因（`/opt/zhichao` 是站点根，对应仓库 `cloud/` 层）。
+- **重写 C「标准工作流」**：由原来的「scp 上传」改为「本地 Docker 预览 → commit/push → 云电脑 pull → rsync 下发 → 线上回归」，并注明纯静态改动无需重启容器。
+- **修正运行环境错位（重要）**：原文档按 Windows 本地路径与 `node.exe` 写，但策展任务实际运行在云电脑 Linux。已改为双路径并列（云电脑 `node scripts/push-lighthouse.ts` / 本地 `node.exe` 完整路径），架构图与「有本机权限」小节同步更正。
+- **补充约束**：SSH 连接受频率限制（连续第 3 次被拒、冷却约 100 秒）；`docker compose down/stop` 的禁止范围限定为服务器容器，本地开发环境不在此限；前端改动范围补入 `js/app.js` 与 `styles/inline.css`。
+- **边界**：仅改文档，未动代码、数据与线上。
+
 
 
 
