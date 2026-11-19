@@ -992,6 +992,16 @@
 - **待确认**：云电脑 `/home/user/zhichao` **目前不是 git 仓库**（无 `.git`），需首次 clone/init 后才能 pull；服务器侧代码更新方式（git pull 还是既有 scp 部署）待定。本地存在两个 remote：`github`（z3173737035-maker/zhichao）与 `origin`（gitee zhang-suger/AIHOT），推送目标待定。
 - **边界**：未改线上、未 commit、未删任何磁盘文件。
 
+## 2026-11-19 15:35（Asia/Shanghai）｜代码仓库接入：gitee 为唯一远端，云电脑建仓对齐
+
+- **变更类型**：仓库与同步链路接通（首次提交推送 + 云电脑建仓）。不涉及线上部署。
+- **本地**：提交 `2fc631d`「拆分 index 为外链 CSS/JS，落地两角色契约与 Docker 本地同构，数据与代码分通道」，84 项变更（含 `cloud/js/app.js`、`cloud/styles/inline.css`、40.4 MB `cloud/assets`、`docker-compose.yml`、`docs/CONTRACTS.md`、`design/`，以及 4 个数据文件的移出）。推送至 `origin` = `https://gitee.com/zhang-suger/AIHOT.git`，`a199c6e..2fc631d main -> main`。
+- **云电脑**：`/home/user/zhichao` 原无 `.git`，本次 `git init` + `remote add origin` + `fetch` + `reset --hard origin/main`（206 个文件更新），HEAD 对齐 `2fc631d`。
+- **数据零损伤（关键验证）**：`reset --hard` 前后 md5 完全一致 —— `current.json` `e4137b47…`、`changelog.json` `1b0ea491…`、`.data/published.json` `c4d765cb…`。原因：数据文件已不在 git 索引内，属未跟踪状态，reset 不会触碰。`git ls-files cloud/data` 现仅剩 `music.json` 与 `music.json.gz`（静态配置）。
+- **备份**：操作前已把 `cloud/data`、`.data`、`scripts` 备份到云电脑 `/tmp/zc-backup/`。
+- **未完成**：服务器 `root@120.53.6.132` 的 SSH 连接被限流拒绝（`kex_exchange_identification: Connection closed`），按 HANDOVER 规定不重试，服务器侧尚未建仓/拉取，线上仍为旧代码。
+- **边界**：线上未变；本地工作区在提交后干净。
+
 
 
 
