@@ -1033,6 +1033,16 @@
 - **验证**：43 个文件与源目录同名同大小；`git add` 45 项（含 README 与交付清单修订），提交 `b242c9d` 已推送。
 - **边界**：未改 `cloud/assets` 任何文件，未部署，线上无变化。
 
+## 2026-11-19 15:10（Asia/Shanghai）｜修复立绘 / 贴纸 / 表情图片 404
+
+- **现象**：线上浏览器报 `GET /assets/mascot-hot.webp 404`。
+- **根因**：`js/app.js` 里三张映射表（`MASCOT_BY_DOMAIN`、`SPECIAL_MASCOT`、`STICKER_BY_DOMAIN`）只写了裸文件名，使用处统一拼 `"assets/" + file`；而实际文件在 `assets/mascot/pose/`、`assets/mascot/sticker/` 子目录，路径少了两层。`emptyHTML()` 同理，拼出 `assets/emo-*.webp` 而文件在 `assets/emo/`。
+- **影响面**：热榜大图旁的小立绘、无配图条目的方向贴纸、空搜索结果/收藏空/方向空/数据未达四种空态表情全部取不到图，前端回退成灰块。`index.html`、`mascot.js`、`inline.css` 中的引用本来就是完整路径，不受影响。
+- **修法**：三张表的值补成相对 `assets/` 的完整子路径（`mascot/pose/…`、`mascot/sticker/…`）；`emptyHTML()` 检测到 `emo-` 开头时补 `emo/` 前缀，四个调用点不动。同步成新注释，避免以后再按裸名加表项。
+- **版本**：`js/app.js?v=20261119c` → `?v=20261119d`，重生成 `app.js.gz`（47002 B）与 `index.html.gz`（7831 B）。
+- **验证**：assets 下 6 个关键文件 `mascot/pose/mascot-hot.webp`、`mascot/sticker/sticker-edu.webp`、`emo/emo-dizzy.webp` 等路径均存在；全仓库不再有裸 `.webp` 引用（除 `emptyHTML` 入参）。
+- **边界**：未改 `cloud/assets` 文件本身，未改 nginx 与后端。
+
 
 
 

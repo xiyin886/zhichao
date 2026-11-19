@@ -81,7 +81,7 @@ function saveDeleted(set){ localStorage.setItem(DEL_KEY, JSON.stringify([...set]
 /* 空状态插画 */
 function emptyHTML(img, text){
   var stk = img.indexOf("emo-") === 0;
-  return '<div class="empty"><img class="' + (stk ? "emo" : "") + '" src="assets/' + img +
+  return '<div class="empty"><img class="' + (stk ? "emo" : "") + '" src="assets/' + (stk ? "emo/" : "") + img +
     '" alt=""><div class="et">' + text + "</div></div>";
 }
 
@@ -767,17 +767,18 @@ function renderAside(items, favs){
 }
 
 /* ---------- 头条 + 榜单：汐音立绘随页面切换 ---------- */
+/* 以下三张表的路径均相对 assets/，必须带子目录，拼出的是 assets/mascot/pose/… 与 assets/mascot/sticker/… */
 const MASCOT_BY_DOMAIN = {
-  edu:"mascot-edu.webp", it:"mascot-it.webp", gear:"mascot-hardware.webp",
-  acgn:"mascot-acg.webp", game:"mascot-game.webp", health:"mascot-health.webp",
-  deal:"mascot-deal.webp", explore:"mascot-explore.webp"
+  edu:"mascot/pose/mascot-edu.webp", it:"mascot/pose/mascot-it.webp", gear:"mascot/pose/mascot-hardware.webp",
+  acgn:"mascot/pose/mascot-acg.webp", game:"mascot/pose/mascot-game.webp", health:"mascot/pose/mascot-health.webp",
+  deal:"mascot/pose/mascot-deal.webp", explore:"mascot/pose/mascot-explore.webp"
 };
-const SPECIAL_MASCOT = { all:"mascot-hot.webp", pick:"mascot-featured.webp", fav:"mascot-favorite.webp" };
+const SPECIAL_MASCOT = { all:"mascot/pose/mascot-hot.webp", pick:"mascot/pose/mascot-featured.webp", fav:"mascot/pose/mascot-favorite.webp" };
 /* 没有配图的热点：用汐音的贴纸顶上，别再摆一块灰底大字 */
 const STICKER_BY_DOMAIN = {
-  edu:"sticker-edu.webp", it:"sticker-it.webp", gear:"sticker-gear.webp",
-  acgn:"sticker-acgn.webp", game:"sticker-game.webp", health:"sticker-health.webp",
-  deal:"sticker-deal.webp", explore:"sticker-explore.webp"
+  edu:"mascot/sticker/sticker-edu.webp", it:"mascot/sticker/sticker-it.webp", gear:"mascot/sticker/sticker-gear.webp",
+  acgn:"mascot/sticker/sticker-acgn.webp", game:"mascot/sticker/sticker-game.webp", health:"mascot/sticker/sticker-health.webp",
+  deal:"mascot/sticker/sticker-deal.webp", explore:"mascot/sticker/sticker-explore.webp"
 };
 function stickerFigure(domain, label){
   const ch = esc((label || "知").slice(0, 1));
