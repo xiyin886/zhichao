@@ -754,3 +754,180 @@
 - **校验**：同步后重算本地清单，与服务器比对 **缺 0 / 不一致 0**；三张聊天立绘与 `changelog.json`（`2ea46370…`）均与线上一致。
 - **备份**：`E:\AIHOT\.sync-backup-20261118\`（13 个被覆盖文件 + 旧 `OPS-CHANGELOG.md`）。
 - **文档**：`OPS-CHANGELOG.md` 514 → 743 行，旧 31 个段落全部保留；`汐音-服装设计规范.md` 首次落到本地；`HANDOVER-zhichao-curation.md` MD5 未变。
+
+---
+
+## 2026-11-18 23:28（Asia/Shanghai）｜聊天立绘按主题双套 + 御姐道具整改
+
+- **变更类型**：站点资源 + 前端逻辑（`index.html`、`assets/chat-xiyin*.webp`）
+- **两个问题**：
+  1. 哥特御姐与哥特少女都持烛台，道具重复，角色辨识靠不住。
+  2. 浅色主题下聊天左栏显示的是暗色哥特立绘，与亮色面板冲突。
+- **御姐道具整改**：基于原出稿做局部编辑（只动手部），烛台改为「右手黑羽笔 + 左手一叠卷边校样稿」，其余（服装、姿态、光色、画风）保持不动。系列内三形态道具不再重复：主编＝羽笔/校样稿、少女＝烛台、见习生＝提灯。
+- **主题双套**：
+  - 白天（`data-zc-theme="light"`）→ 原版浅色立绘，直接复用 `backups/chat-xiyin*-before-nightstaff-20261118.webp`（MD5 与原版一致，未重新生成，避免又一次风格漂移）。
+  - 夜间（`data-zc-theme="dark"`）→ 哥特礼服三张。
+  - 新增资源 `assets/chat-xiyin-day.webp`（`c62706d8…`）、`chat-xiyin-day-cute.webp`（`733a41d8…`）、`chat-xiyin-day-girl.webp`（`ccee1712…`）。
+- **代码改动**：
+  - `FORMS` 每项新增 `day` 字段，新增 `formSrc(f)` 按当前主题返回 `f.src`／`f.day`。
+  - `initForm()`、翻转预加载 `hiddenFace.src`、消息头像 `av.src` 全部改走 `formSrc()`。
+  - 新增 `watchFormTheme()`：监听 `html[data-zc-theme]`，聊天窗口开着时即时换 src（只改 src 不重建 DOM，同样避开未登录时的匿名请求）。
+  - `initChatAssets()` 预加载两套图，切换不闪。
+- **本地验证**：Chromium 模拟登录，`light` 下三形态逐张截图＝原版立绘；`dark` 下御姐＝哥特新道具版（羽笔+稿纸，无烛台）；无 pageerror。控制台两条 404 来自本地缺失的语音/群聊场景图，非本次资源。
+- **部署**：`index.html 011476cb…`、`index.html.gz e5630ff0…`、`chat-xiyin.webp 3dcdacfb…` 与服务器一致。
+- **更新手账**：126 → 127 条，三处 MD5 `cf4068d7…`。
+- **备份**：服务器 `/opt/zhichao-backups/theme-20261118-2327/`（旧 index.html、index.html.gz、旧御姐图）。
+- **未验证**：真实浏览器手动切主题的连续切换（本地仅脚本切属性验证）。
+
+---
+
+## 2026-11-18 23:45（Asia/Shanghai）｜静态资源按模块重组（本地 + 云端）
+
+- **变更类型**：目录结构重构（`assets/` 由 60 个平铺文件改为分模块目录），涉及 `index.html`、`js/mascot.js` 引用路径。
+- **动机**：顶层平铺 60 个文件，图标/立绘/贴纸/占位图混在一起，找东西靠记名字。
+- **新结构**：`brand/`（图标）、`cover/`（书封）、`chat/`（三形态立绘）、`emo/`（空态表情）、`ui/`（占位与开场门）、`mascot/pose|chibi|sticker|scene/`（看板娘各相）、`music/`、`voice/`、`_archive/`（历史与本地独有，不参与引用）。
+- **执行方式（可复现）**：
+  1. 生成 `旧路径→新路径` 映射表（57 条），`mv` 逐条搬迁，**先改代码后换目录会 404，这里顺序是「先移文件、再改引用」在本地副本验证，最后同步线上**。
+  2. `python` 按映射对 `index.html`、`js/mascot.js` 做精确字符串替换（41 处），未改任何逻辑。
+  3. 校验：脚本抽取两文件里全部 `assets/` 引用（37 条，其中 3 条是 `assets/voice/<form>-` 拼接前缀），逐个 `os.path.exists` 检查，0 缺失。
+  4. `gzip -9 -n` 重新生成 `index.html.gz`、`js/mascot.js.gz`。
+- **本地验证**：Chromium 载入新结构，监听 `response>=400` 且 URL 含 `assets/`，**0 条 404**；首屏、星月手账、聊天页三张截图正常。
+- **云端**：备份 `/opt/zhichao-backups/reorg-20261118-2337/`（26M，含整份 assets 与四个代码文件）→ 服务器按同一映射 `python shutil.move`（moved 56 / skip 1，skip 的是线上本就没有的 `book-cover.webp`）→ 上传 `index.html(.gz)`、`js/mascot.js(.gz)`。
+- **一致性**：服务器 109 文件 / 本地 139（多出 30 个全是归档件），**仅服务器有 0、内容不同 0**。
+- **本地仓库处理**：`E:\AIHOT\cloud\assets` 先整份备份到 `.sync-backup-20261118\assets-before-reorg`（106 文件），再从服务器整目录拉取，最后把**本地独有的 25 个旧素材**（`*_zhizhu` 系列 PNG、旧 `mascot-*.png`、`chat-xiyin*.png` 等）归入 `assets/_archive/local-legacy/`；未上线的 `js/beautify.js`、`js/polish.js`、`styles/beautify.css`、`styles/polish.css`（确认 index.html 引用数 0）与 `index.backup-before-mascot.html` 归入 `cloud/_archive/local-legacy/`。
+- **数据**：顺带把 `data/current.json(.gz)`、`data/changelog.json(.gz)` 拉到最新（手账 127 条，`cf4068d7…`）。
+- **文档**：`HANDOVER-zhichao-curation.md` 新增「静态资源目录结构」一节。
+- **风险提示**：任何外部脚本若硬编码了旧的 `assets/xxx.webp` 平铺路径，需要同步改；站内引用已全部走新路径。
+
+
+---
+
+## 2026-11-19 09:50（Asia/Shanghai）｜新增「汐音·形象」页（九秒 CG + 六套装束陈列）
+
+- **变更类型**：界面新增（改动集中在 `index.html` 内嵌 CSS/JS，未新增独立 js/css 文件）；新增一个静态视频资产。
+- **动机**：9s《潮间编辑部小屋》CG（seedance 2.5）不做每次进门的强制开场，改放入形象页按需播放，避免主人高频回访每次被 9 秒打断；形象页作为看板娘作品集陈列六套装束。
+- **内容**：
+  - 左侧导航新增「汐音·形象」菜单按钮（`#artBtn`，`--c:var(--accent)`，星芒图标，样式沿用 `log-btn`）。
+  - 新增 `<dialog id="artDlg">` 模态弹窗：16:9 视频播放器（`#artVideo`，`controls/playsinline/preload=metadata`，poster 复用 `assets/mascot/scene/group-xiyin-home.webp`）+ 三张昼、三张夜共六张立绘卡片（御姐/少女/萝莉 × 昼/夜，复用 `assets/chat/` 已有立绘，不复制大文件），每卡标注形态/职责与一句服装设定。
+  - 打开弹窗才把 `data-src` 填充为 `src`（视频 + 六图），关闭时 `video.pause()`；未登录不发起匿名请求。
+- **视频处理**：源为 HEVC 1280×720 / 9.06s，转 H.264（yuv420p, CRF23）+ AAC 96k + `+faststart` 便于网页流式，落 `cloud/assets/art/intro-cg.mp4`（1.92MB）。
+- **gitignore**：`cloud/assets/art/` 整目录排除、不随仓库提交；未改动、未排除已被跟踪的 `music/`、`voice/` 等既有大文件。
+- **本地校验**：7 个 `<dialog>` 全部配对、标签栈空；`artBtn/artDlg/artVideo/openArt` 引用齐全；本机 index.html md5 与服务器一致（`c474c9799b5254c00db45d4ac422c5e6`）。
+- **云端**：备份 `/opt/zhichao-backups/20261119-0950/`（原 index.html/.gz）→ scp `index.html(.gz)` 与 `assets/art/intro-cg.mp4`；未改后端、未重启容器。
+- **一致性校验**：本机/服务器 `index.html` md5 一致（`c474c9799b5254c00db45d4ac422c5e6`）、`.gz` 一致（`ee9e0504afacf7a07de3062529b9323b`）、视频 md5 一致（`51196626bd558fcf0798e30e09838389`）；线上主页 200、`Cache-Control: no-cache, must-revalidate`；匿名 `/assets/art/` 与 `/assets/chat/` 均 401。
+- **日志**：changelog 新增 1 条（界面，128 条），权威/备份/本机三份一致；本地副本已追加同条。
+- **风险提示**：视频走 `/assets/` 的 `auth_request`，仅登录可看；`art/` 目录被 gitignore，后续新增大视频同样不入库，需单独 scp 部署；本地无 git CLI，提交由用户在终端执行。
+
+
+---
+
+## 2026-11-19 10:12（Asia/Shanghai）｜形象页改 Swiper coverflow 卡组（悬停抽出 + 点卡详情）
+
+- **变更类型**：界面交互重构（`index.html` 内嵌 CSS/JS）；新增开源库本地 vendor。
+- **动机**：旧平铺网格立绘被 `cover` 裁掉头尾、形式太素；要求游戏向错位堆叠、悬停抽出、点卡弹详情，不自己造轮子，用可复用开源工具。
+- **选型**：Swiper 11.2.6（MIT，原生 JS 零依赖），bundle 落 `vendor/swiper-bundle.min.js`(154008B) + `.css`(18454B)，不依赖公网 CDN；`effect:'coverflow'` 中心突出、两侧后叠错位。
+- **改动**：立绘 `object-fit:contain` 全身不裁切；悬停 `translateY(-18px) scale(1.05)` + 粉边 + 深阴影 + 提亮；点卡弹 `<dialog id="artDetailDlg">` 完整立绘大图 + 名称/职责 tag + 服装设定；打开才填充 data-src，关闭暂停视频。
+- **校验**：playwright+chromium 真开页面，6 slide 渲染、active 正确、详情数据正确、无 JS 报错；截图核验堆叠/悬停/详情。唯一 404 为既有 `assets/mascot-hot.webp`，与本次无关。
+- **云端**：备份 `/opt/zhichao-backups/20261119-1012/` → scp index.html(.gz) + vendor/swiper 两文件；未改后端。服务器 md5 与本机一致（index.html `868ce018…`、gz `42c6b820…`、js `750b7e15…`、css `2a1dc9ac…`）；主页 200；匿名 `/vendor/`、`/assets/art/` 均 401。
+- **日志**：changelog 新增 1 条（界面，129 条），权威/备份 json md5 `ca56b435…` 一致。
+- **本地同步**：Windows 副本从公网拉取已部署主页（md5 一致），Swiper 经 npmmirror 拉取 md5 一致；changelog 追加第 129 条并重 gz。
+- **风险提示**：Swiper 为新增 vendor 代码文件，应随 git 提交（非大视频，不在 gitignore 内）；`/vendor/` 受 auth_request 保护匿名 401。
+
+---
+
+## 2026-11-19 10:30（Asia/Shanghai）｜重写 .gitignore（按规范分类清理不宜入库文件）
+
+- **变更类型**：仓库规则（仅本地 git 副本，不部署服务器；vm 非 git 仓库）。
+- **动机**：原 .gitignore 仅排除记忆数据/备份/art 视频，未覆盖本地同步备份、旧素材归档、Python 缓存与预览临时文件；按 git 提交规范补全分类。
+- **规则分组**（重写后）：
+  1. 本地记忆/工作数据：`.data/`、`.workbuddy/`
+  2. 备份与历史归档：`backups/`、`live2d/`、`.sync-backup-*/`、`cloud/_archive/`、`cloud/assets/_archive/`
+  3. 大体积媒体：`cloud/assets/art/`（视频单独 scp 部署）
+  4. Python 缓存：`__pycache__/`、`*.pyc`、`*.pyo`
+  5. 日志与运行临时：`*.log`、`dev/.preview-memory.json`、`*.tmp`、`*.bak`、`*.cache`
+  6. 依赖/构建预留：`node_modules/`、`dist/`、`build/`
+  7. 系统杂项：`.DS_Store`、`Thumbs.db`、`desktop.ini`、`*~`
+- **跟踪清理**：`dev/.preview.log`、`dev/.preview-memory.json` 此前被误跟踪，已 `git rm --cached`（本地文件保留，下次提交记录移除）；`server/__pycache__/` 本就未跟踪，由新规则拦截。
+- **保留不动**：已跟踪的 `cloud/assets/music/`、`cloud/assets/voice/`（音频）、`docs/readme/` 文档截图、`assets-source/` 原始素材、`cloud/vendor/` 开源库、`.gz` 部署压缩件均继续入库，未用全局扩展名规则误伤。
+- **校验**：`git check-ignore` 抽测 8 条全部命中；`git status` 未跟踪清单仅剩应入库的 `cloud/assets/{brand,chat,cover,emo,mascot/*,ui}/` 与 `cloud/vendor/swiper*`；`.sync-backup-*`、`_archive`、`__pycache__` 不再出现。
+- **风险提示**：`git rm --cached` 的两个预览文件需随下次提交才真正从索引移除；已跟踪的大素材（music/voice/docs/assets-source）若日后要彻底排除，需另行 `git rm --cached` 并评估历史体积，本次未动。
+
+---
+
+## 2026-11-19 10:29（Asia/Shanghai）｜形象页新增立绘集（GLightbox 灯箱）
+
+- **变更类型**：界面功能（index.html 内嵌 CSS/JS）；新增开源库本地 vendor。
+- **动机**：卡组下方加「一键查看全部」入口，像立绘集一样精致陈列，复用开源工具、不闭门造车。
+- **选型**：GLightbox 3.3.0（MIT、零依赖原生 JS 灯箱），bundle 落 vendor/glightbox.min.js(56KB)+.css(13.7KB)；全屏放大、左右切换、标题/描述、缩放、关闭。网格用原生 CSS Grid，未再引依赖。
+- **改动**：卡组下方新增粉胶囊按钮「✦ 查看全部立绘集 →」；新 dialog#artGalleryDlg，3 列响应式网格（移动 2 列），六套立绘全身完整+职责 tag+服装描述，悬停抬升放大+放大镜角标；固定 ART_SET 六套数据生成（避免 Swiper loop 打乱 DOM 顺序）。
+- **层级处理（关键坑）**：modal dialog 顶层叠层会盖住普通 fixed 灯箱，故点卡先 close()，90ms 后 artLightbox.openAt(idx) 开灯箱；on('close') 回到立绘集。GLightbox API 为 openAt(index)，selector 收集 slides，selector:null 无法 open。
+- **校验**：playwright+chromium 真开：网格 6 项、昼三上排夜三下排、灯箱 block 可见、萝莉昼全屏+左右箭头+标题描述；无新 JS 错误，唯一 404 为既有 mascot-hot.webp。
+- **云端**：备份 /opt/zhichao-backups/20261119-1028/ → scp index.html(.gz)+vendor/glightbox 两文件；md5 全一致（index.html c7eef5f8…、gz 49da8a82…、js 3e80bc0d…、css 9b438b29…）；主页 200，匿名 /vendor/、/assets/art/ 401。
+- **日志**：changelog 新增 1 条（界面，130 条），权威/备份/本机 json md5 10996b19… 一致。
+- **风险提示**：GLightbox 为新增 vendor 代码文件，应随 git 提交；/vendor/ 受 auth_request 保护匿名 401。
+
+---
+
+## 2026-11-19 10:29（Asia/Shanghai）｜形象页新增立绘集（GLightbox 灯箱）
+
+- **变更类型**：界面功能（index.html 内嵌 CSS/JS）；新增开源库本地 vendor。
+- **动机**：卡组下方加「一键查看全部」入口，像立绘集一样精致陈列，复用开源工具、不闭门造车。
+- **选型**：GLightbox 3.3.0（MIT、零依赖原生 JS 灯箱），bundle 落 vendor/glightbox.min.js(56KB)+.css(13.7KB)；全屏放大、左右切换、标题/描述、缩放、关闭。网格用原生 CSS Grid，未再引依赖。
+- **改动**：卡组下方新增粉胶囊按钮「✦ 查看全部立绘集 →」；新 dialog#artGalleryDlg，3 列响应式网格（移动 2 列），六套立绘全身完整+职责 tag+服装描述，悬停抬升放大+放大镜角标；固定 ART_SET 六套数据生成（避免 Swiper loop 打乱 DOM 顺序）。
+- **层级处理（关键坑）**：modal dialog 顶层叠层会盖住普通 fixed 灯箱，故点卡先 close()，90ms 后 artLightbox.openAt(idx) 开灯箱；on('close') 回到立绘集。GLightbox API 为 openAt(index)，selector 收集 slides，selector:null 无法 open。
+- **校验**：playwright+chromium 真开：网格 6 项、昼三上排夜三下排、灯箱 block 可见、萝莉昼全屏+左右箭头+标题描述；无新 JS 错误，唯一 404 为既有 mascot-hot.webp。
+- **云端**：备份 /opt/zhichao-backups/20261119-1028/ → scp index.html(.gz)+vendor/glightbox 两文件；md5 全一致（index.html c7eef5f8…、gz 49da8a82…、js 3e80bc0d…、css 9b438b29…）；主页 200，匿名 /vendor/、/assets/art/ 401。
+- **日志**：changelog 新增 1 条（界面，130 条），权威/备份/本机 json md5 10996b19… 一致。
+- **风险提示**：GLightbox 为新增 vendor 代码文件，应随 git 提交；/vendor/ 受 auth_request 保护匿名 401。
+
+## 2026-11-19 10:55（Asia/Shanghai）｜新增立绘上传接口 /api/art，形象页可随时上传立绘
+
+- **变更类型**：后端 server.py（标准库 http.server）+ nginx 代理 + 前端 index.html 内嵌 JS；不改口令门与既有鉴权。
+- **动机**：用户要「网站上设计一个接口，我可以随时上传立绘集」，不用每次改代码部署。
+- **存储决策（关键）**：memory 容器对 `/site`（宿主机 /opt/zhichao）只读挂载，后端写不了静态目录；可写卷是 `/data`（/opt/zhichao-memory/data）。故上传图落 `/data/art/`、清单落 `/data/gallery.json`，由后端 `GET /api/art/file/<name>` 会话鉴权回吐二进制，**不进 git、不进 /opt/zhichao 静态目录**。内置六套由前端 ART_SET 兜底，接口只回上传项。
+- **后端（server.py）**：`GET /api/art` 返 read_gallery()；`POST /api/art` 收 `{name,tag,group,ds,dataUrl}`，解码 dataUrl、MIME 白名单 webp/png/jpeg、落盘 `/data/art/<时间戳+secrets.token_hex(4)>.<ext>`、清单 insert(0)；`DELETE /api/art/<id>` 删条目+图；`GET /api/art/file/<name>` basename 防穿越回图。全部 valid_session 校验；单图解码 ≤6MB、请求体 ≤14MB；mkstemp+os.replace 原子落盘，文件名服务端生成不接受原名。
+- **nginx（default.conf）**：新增 `location = /api/art`（auth_request，GET/POST/DELETE 代理到后端）+ `location ~ ^/api/art/file/`（auth_request，仅 GET 原样转发）。
+- **前端（index.html）**：ART_SET 六项加 builtIn:true 兜底；fetchGallery() 拉 /api/art，上传项置前合并；立绘集头部「＋上传立绘」按钮→#artUploadDlg 表单（FileReader dataUrl 预览、名称≤40、tag≤20、昼夜 select、描述≤300），POST 成功 unshift 重绘；上传项 hover 显删除钮（内置 .builtin 隐藏）；GLightbox 每次 destroy() 再 new 避免绑空 selector；escHtml() 转义用户输入。
+- **校验**：playwright+chromium 真开：内置六套网格正常、上传弹窗与字段齐全、无 JS 错误（仅预览期 /api/art 404 与既有 mascot-hot.webp 404）。
+- **云端**：备份 /opt/zhichao-backups/20261119-1049/（server.py/nginx.conf/index.html）；server.py 容器内 py_compile 通过 → docker restart zhichao-memory；nginx -t 通过 → docker exec zhichao-web nginx -s reload（不 restart web）；前端 index.html(.gz) 落 /opt/zhichao/。复核：主页 200、新代码命中 6 处、匿名 /api/art 与 /api/art/file/ 401、匿名 /vendor/ /assets/art/ 401、memory /health ok、容器 Up、changelog 131 条。
+- **日志**：changelog 新增第 131 条（功能，last 10:55），权威 /opt/zhichao-memory/data/changelog.json 与备份 md5 c1b3bdb4… 一致。
+- **本地同步说明**：本轮 client 会话命令通道（PowerShell）未挂载，index.html(.gz) 未从公网拉取、changelog.json 由本地文本工具追加第 131 条（条数一致，md5 与权威不同属格式差异，正常）；待命令通道恢复后复核 index.html md5=bf2bd818…。
+- **风险提示**：上传图存容器卷 /data/art/（持久化于宿主机 /opt/zhichao-memory/data，docker restart 不丢；勿误清卷）；上传项仅登录会话可见，匿名 401；无口令无法 curl 模拟登录态，真上传联调留用户页面操作。
+
+## 2026-11-19 11:25（Asia/Shanghai）｜本地仓库建上传立绘占位目录 self-upload
+
+- **变更类型**：本地仓库结构（不涉及线上部署，服务器 /data/art/ 不变）。
+- **动机**：用户要求立绘存放位置统一可查，在本地仓库建对应占位，避免日后把服务器上传图误拉回提交。
+- **改动**：新增 `cloud/assets/self-upload/README.md`（说明上传图实际在服务器 /data/art/、清单 /data/gallery.json，内置六套在 ../chat/，本目录保持空）；`.gitignore` 第 3b 节加 `cloud/assets/self-upload/*` + `!README.md` 放行，误丢大图不入库。
+- **边界**：未改后端、前端、nginx、服务器文件；changelog.json 访客面不新增（用户看不到占位目录）。
+
+## 2026-11-19 11:39（Asia/Shanghai）｜本机全量副本对齐服务器（只读回拉，不部署）
+
+- **变更类型**：本地副本同步（不涉及线上部署，服务器文件未动）。
+- **动机**：用户要求本机保有全部项目副本便于直接查看；此前本机后端为旧基线（server.py 502 行，缺 /api/art）。
+- **静态资产比对**：`cloud/` 与服务器 `/opt/zhichao` 逐项 md5，102 个一致、0 缺失；仅 `data/changelog.json` 因 ConvertTo-Json 换行格式差异 md5 不同（131 条内容一致，属正常）。CG 视频 `cloud/assets/art/intro-cg.mp4` 已在上一轮回拉（md5 `51196626…`，gitignore 排除不提交）。
+- **后端回拉**：备份旧 live 副本到 `backups/backend-pre-pull-20261119/`；`server/server-live.py`=线上 800 行权威版（md5 `f5b71a2c…`），`server/default-live.conf`=线上 nginx 207 行（md5 `0a9cd95d…`）。旧 `server.py`/`default.conf` 留档为历史基线，不作权威。
+- **边界**：纯本机回拉，未改任何线上文件、未重启/ reload 服务；上传立绘 `/data/art/` 仍为空（未首传），本机不存；运行时数据（current.json/music.json 动态热点）不拉回。
+
+## 2026-11-19 11:50（Asia/Shanghai）｜修复立绘上传失败 + 上传弹窗重做
+
+- **变更类型**：线上修复（nginx 配置 + 前端），已部署。
+- **故障根因**：用户上传必报「上传失败，确认已登录后再试」。nginx 日志实证 `client intended to send too large body: 1627602 bytes` → 413。图片 base64 后约 1.6MB，超过 nginx 默认 `client_max_body_size 1m`；且 `auth_request` 子请求 `/api/auth` 同样按默认 1m 校验，主请求放行也会被子请求 413 打成 500。会话本身正常（GET /api/art 200）。
+- **nginx 修复**：server 块全局加 `client_max_body_size 15m;`（覆盖主请求与 auth 子请求，后端上限 14MB 留余量），`location = /api/art` 同样保留；`nginx -t` 通过后 `nginx -s reload`（未 restart）。旧配置备份 `/opt/zhichao-nginx/default.conf.bak-20261119-artbody`。
+- **前端重做**：隐藏原生 `<input type=file>`，改为自定义「＋选择图片」胶囊按钮（`#upPickBtn` 触发 `upFile.click()`），已选文件名 `#upFileName` 直显；错误按状态码分类：413→「图片太大被拦截，请压缩」、401→「登录已过期」、其他→「上传失败（HTTP 码）」。
+- **校验**：匿名 2.7MB POST → 401（链路通）、16MB → 413（上限生效）、GET / 200；匿名 GET/POST /api/art 仍 401；index.html md5 `0b01d691…`、新 nginx md5 `56ac9c2f…`、changelog 132 条 `1b0ea491…` 本机与线上一致。真实登录态上传留用户页面终验。
+- **changelog**：访客面新增第 132 条（功能，「立绘上传修复：放开大图限制，上传框重新设计」），已同步 memory 卷与 /opt/zhichao/data 两处。
+- **边界**：后端 server.py 未改、未重启容器；口令门、既有鉴权、上传/删除逻辑未动。
+
+## 2026-11-19（Asia/Shanghai）｜交接文档精简 + 新建通用技能 website-update-workflow
+
+- **变更类型**：本地文档重构 + 技能创建（不涉及线上部署，服务器文件未动）。
+- **HANDOVER 精简**：将原「五点五 部署踩坑」「静态资源目录」「五点七 形象页」「五点八 上传接口」四块（内容重复、约 112 行）整合为单一「五点五、网站更新与部署工作流」，含 A 架构路径 / B 前端组件设计 / C 标准工作流 / D 注意事项 / E 资源目录速查 / F 上传接口六小节；全文由约 360 行降至 293 行，策展业务章节（一~四、五、五点六、六、七）原样保留。
+- **组件设计补全**：四个原生 dialog、Swiper/GLightbox 落 vendor、自定义上传控件、object-fit 全身、四个组件坑（top-layer/openAt/loop DOM/destroy）统一写入 B 节。
+- **新技能**：在 `.user_skills/website-update-workflow/` 用 init_skill.py 创建，结构 `SKILL.md`（65 行，通用工作流+红线+坑）+ `references/deploy-checklist.md`（37 行部署检查单）+ `references/frontend-components.md`（40 行组件模式）；不含 README/CHANGELOG/示例文件，frontmatter 仅 name+description，已手动静态校验通过。
+- **边界**：未安装依赖（quick_validate 需 pyyaml，改手动校验）；未改任何线上文件、未重启服务；git 提交由用户自行执行。
+
+
+
+
+

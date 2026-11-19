@@ -40,6 +40,15 @@ CHANGELOG_FILE = os.environ.get("CHANGELOG_FILE", os.path.join(BASE, "changelog.
 CHANGELOG_FALLBACK = os.environ.get("CHANGELOG_FALLBACK", "/site/data/changelog.json")
 MAX_CHANGELOG_BYTES = 512 * 1024
 
+# 立绘集（用户随时上传）：图片存可写卷 /data/art/，清单 /data/gallery.json。
+# 容器对 /site 只读，写不了静态目录，故图片由后端 /api/art/file/ 经鉴权回吐。
+ART_DIR = os.path.join(BASE, "art")
+GALLERY_FILE = os.environ.get("GALLERY_FILE", os.path.join(BASE, "gallery.json"))
+MAX_ART_BYTES = 6 * 1024 * 1024        # 单图解码后上限
+MAX_ART_PAYLOAD = 14 * 1024 * 1024    # 上传 JSON 体上限（含 base64，约 6MB 图）
+ART_MIME = {"image/webp": "webp", "image/png": "png",
+            "image/jpeg": "jpg", "image/jpg": "jpg"}
+
 # 聊天代理配置
 MOONSHOT_KEY = os.environ.get("MOONSHOT_KEY", "")
 MOONSHOT_URL = os.environ.get("MOONSHOT_URL", "https://api.moonshot.cn/v1/chat/completions")
@@ -275,6 +284,7 @@ def clear_failures(ip):
 
 # ---------------- 更新日志（重要标记） ----------------
 _changelog_lock = threading.Lock()
+_gallery_lock = threading.Lock()
 
 
 def read_changelog():
@@ -322,6 +332,49 @@ def write_memory(data):
     finally:
         if os.path.exists(tmp):
             os.remove(tmp)
+
+
+# ---------------- 立绘集存储（用户上传） ----------------
+def read_gallery():
+    try:
+        with open(GALLERY_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if isinstance(data, dict) and isinstance(data.get("items"), list):
+            return data
+    except Exception:
+        pass
+    return {"schema": "zhichao.gallery/v1", "updatedAt": "", "items": []}
+
+
+def write_gallery(data):
+    os.makedirs(BASE, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=BASE, suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        os.replace(tmp, GALLERY_FILE)
+    finally:
+        if os.path.exists(tmp):
+            os.remove(tmp)
+
+
+def _decode_data_url(raw):
+    """data:image/webp;base64,xxxx -> (mime, bytes)；非法或超限返回 (None, None)。"""
+    if not isinstance(raw, str) or not raw.startswith("data:"):
+        return None, None
+    head, _, b64 = raw.partition(",")
+    if ";" not in head or not b64:
+        return None, None
+    mime = head[5:head.index(";")].strip().lower()
+    if mime not in ART_MIME:
+        return None, None
+    try:
+        data = base64.b64decode(b64, validate=True)
+    except Exception:
+        return None, None
+    if not data or len(data) > MAX_ART_BYTES:
+        return None, None
+    return mime, data
 
 
 # ---------------- 站内数据库上下文注入 ----------------
@@ -420,6 +473,14 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, read_changelog())
         elif path == "/memory":
             self._send(200, read_memory())
+        elif path == "/api/art":
+            # 立绘集清单：已登录可读，内置六套由前端兜底，这里只回上传项
+            if not valid_session(self._cookie()):
+                self._send(401, {"error": "unauthorized"})
+            else:
+                self._send(200, read_gallery())
+        elif path.startswith("/api/art/file/"):
+            self._serve_art_file(path[len("/api/art/file/"):])
         else:
             self._send(404, {"error": "not found"})
 
@@ -438,6 +499,15 @@ class Handler(BaseHTTPRequestHandler):
             self._handle_memory_write()
         elif path == "/chat":
             self._handle_chat()
+        elif path == "/api/art":
+            self._handle_art_upload()
+        else:
+            self._send(404, {"error": "not found"})
+
+    def do_DELETE(self):
+        path = self.path.split("?", 1)[0].rstrip("/") or "/"
+        if path.startswith("/api/art/"):
+            self._handle_art_delete(path[len("/api/art/"):])
         else:
             self._send(404, {"error": "not found"})
 
@@ -542,6 +612,117 @@ class Handler(BaseHTTPRequestHandler):
         write_memory(normalized)
         self._send(200, {"ok": True,
                          "count": sum(len(t) for t in normalized["threads"].values())})
+
+    # ---------------- 立绘集：上传 / 删除 / 出图 ----------------
+    def _handle_art_upload(self):
+        """接收 dataUrl 图片 + 元数据，落盘 /data/art/ 并登记清单。仅已登录。"""
+        if not valid_session(self._cookie()):
+            self._send(401, {"error": "unauthorized"})
+            return
+        data = self._read_json(MAX_ART_PAYLOAD)
+        if not isinstance(data, dict):
+            self._send(400, {"error": "bad request"})
+            return
+        name = (data.get("name") or "").strip()
+        tag = (data.get("tag") or "").strip()
+        group = (data.get("group") or "").strip()
+        ds = (data.get("ds") or "").strip()
+        if not name or len(name) > 40 or len(tag) > 20 or len(ds) > 300:
+            self._send(400, {"error": "bad request"})
+            return
+        if group not in ("day", "night"):
+            group = "day"
+        mime, blob = _decode_data_url(data.get("dataUrl"))
+        if blob is None:
+            self._send(400, {"error": "unsupported or too large image"})
+            return
+        ext = ART_MIME[mime]
+        os.makedirs(ART_DIR, exist_ok=True)
+        fid = _now_iso().replace(":", "").replace("-", "").replace("T", "") + "-" + secrets.token_hex(4)
+        fname = fid + "." + ext
+        fpath = os.path.join(ART_DIR, fname)
+        fd, tmp = tempfile.mkstemp(dir=ART_DIR, suffix=".tmp")
+        try:
+            with os.fdopen(fd, "wb") as f:
+                f.write(blob)
+            os.replace(tmp, fpath)
+        finally:
+            if os.path.exists(tmp):
+                os.remove(tmp)
+        item = {
+            "id": fid,
+            "name": name, "tag": tag, "group": group, "ds": ds,
+            "file": fname,
+            "img": "/api/art/file/" + fname,
+            "builtIn": False,
+            "addedAt": _now_iso(),
+        }
+        with _gallery_lock:
+            doc = read_gallery()
+            doc["items"].insert(0, item)
+            doc["updatedAt"] = item["addedAt"]
+            write_gallery(doc)
+        self._send(200, {"ok": True, "item": item})
+
+    def _handle_art_delete(self, item_id):
+        """按清单 id 删除上传项（内置六套不在清单内，不受影响）。仅已登录。"""
+        if not valid_session(self._cookie()):
+            self._send(401, {"error": "unauthorized"})
+            return
+        item_id = (item_id or "").strip()
+        if not item_id or "/" in item_id or "\\" in item_id:
+            self._send(400, {"error": "bad request"})
+            return
+        removed = None
+        with _gallery_lock:
+            doc = read_gallery()
+            kept = []
+            for it in doc.get("items", []):
+                if it.get("id") == item_id and removed is None:
+                    removed = it
+                else:
+                    kept.append(it)
+            if removed is None:
+                self._send(404, {"error": "not found"})
+                return
+            doc["items"] = kept
+            doc["updatedAt"] = _now_iso()
+            write_gallery(doc)
+        fn = removed.get("file")
+        if fn:
+            try:
+                os.remove(os.path.join(ART_DIR, os.path.basename(fn)))
+            except Exception:
+                pass
+        self._send(200, {"ok": True, "id": item_id})
+
+    def _serve_art_file(self, name):
+        """按文件名回吐图片二进制，basename 防路径穿越。仅已登录。"""
+        if not valid_session(self._cookie()):
+            self._send(401, {"error": "unauthorized"})
+            return
+        name = os.path.basename(name or "")
+        if not name:
+            self._send(404, {"error": "not found"})
+            return
+        fp = os.path.join(ART_DIR, name)
+        if not os.path.isfile(fp):
+            self._send(404, {"error": "not found"})
+            return
+        ext = name.rsplit(".", 1)[-1].lower()
+        mime = {"webp": "image/webp", "png": "image/png",
+                "jpg": "image/jpeg", "jpeg": "image/jpeg"}.get(ext, "application/octet-stream")
+        try:
+            body = open(fp, "rb").read()
+        except Exception:
+            self._send(404, {"error": "not found"})
+            return
+        self.send_response(200)
+        self.send_header("Content-Type", mime)
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "private, max-age=300")
+        self.end_headers()
+        self.wfile.write(body)
 
     # ---------------- 看板娘聊天代理 ----------------
     def _handle_chat(self):

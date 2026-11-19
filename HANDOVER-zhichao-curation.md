@@ -208,46 +208,52 @@
 - 更新日志的**权威副本在容器卷**：`/opt/zhichao-memory/data/changelog.json`（容器内 `/data/changelog.json`，唯一可写）。站点 `cloud/data/changelog.json` 与服务器 `/opt/zhichao/data/changelog.json` 是部署源/备份，**不是线上读的那份**；只改站点那份不会生效，还会在下次部署时覆盖掉网页上标好的「重要」。
 - 不要为了凑量放宽门槛；**一条都没有是完全可以接受的结果**。
 
-## 五点五、部署与踩坑清单（改完前端必看）
+## 五点五、网站更新与部署工作流（每次更新网站都按此执行）
 
-### A. 文件在哪
-- 本机仓库 `~/zhichao`（`cloud/` 是站点根）；服务器 `root@120.53.6.132:/opt/zhichao`，备份 `/opt/zhichao-backups/<YYYYMMDD-HHMM>/`。
-- nginx 配置在**宿主机** `/opt/zhichao-nginx/default.conf`，只读挂载进容器 `zhichao-web:/etc/nginx/conf.d`；不要在容器内改，改了容器重启即丢。
-- 聊天后端 `server.py` 在宿主机 `/opt/zhichao-memory/server.py`，挂载进容器 `zhichao-memory:/app/server.py`；容器挂载 `/opt/zhichao-memory/data -> /data`（可写）、`/opt/zhichao -> /site`（**只读**）。
-- `changelog.json` 的读写由 memory 容器的 `/changelog` 接口处理：nginx 把 `GET /data/changelog.json` 和 `GET/POST /api/changelog` 都代理过去，所以线上日志页读到的就是容器 `/data` 那份。
-- 改完配置：备份 → `docker exec zhichao-web nginx -t` → `nginx -s reload`（**不要** restart 容器，登录态与连接会断）。
+> 通用方法论已沉淀为可复用技能 `website-update-workflow`（含完整部署检查单与前端组件模式）；本节是知潮实例的具体参数与必记点。
 
-### B. 缓存（最容易造成「你根本没部署」的假象）
-- `/`、`/index.html`、`/js/*.js`、`/styles/*.css` 一律 `Cache-Control: no-cache, must-revalidate`，靠 ETag 走 304；`/data/` 是 `no-cache`；`/assets/` 允许 300 秒。
-- 改 `js/` 或 `styles/` 里任何文件，**同时**把 `index.html` 里对应引用后的 `?v=<日期+字母>` 版本号递增，否则老浏览器可能还拿旧脚本。
-- 历史坑：这三类资源原本是 `public, max-age=300`（甚至无缓存头），导致「服务器早就换了、用户看五分钟前的旧页面」，被当成没部署过一次。不要回退成 `max-age`。
-- nginx 里给 `js/css` 加正则 location 时必须写成 `^/(js|styles)/.*\.(js|css)$` 这种带前缀的形式：`location ~* \.(js|css)$` 会抢在 `/vendor/` 前面执行，**绕过 `auth_request`**（曾把 `/vendor/three.module.min.js` 变成匿名可读，已修）。
+### A. 架构与路径
+- 服务器 `root@120.53.6.132`，两容器：`zhichao-web`（nginx，托管 `/opt/zhichao`，`auth_request` 鉴权）、`zhichao-memory`（Python 标准库，登录/记忆/上传/Kimi 反代）。
+- 挂载：memory 容器 `/opt/zhichao→/site`（**只读**）、`/opt/zhichao-memory/data→/data`（**可写**）；nginx 配置宿主机 `/opt/zhichao-nginx/default.conf` 只读挂载进 web；后端 `/opt/zhichao-memory/server.py` 只读挂载进 memory。
+- 本机权威副本：`server/server-live.py`（线上 800 行，`f5b71a2c…`）、`server/default-live.conf`（线上 207 行，`56ac9c2f…`）；旧 `server.py`/`default.conf` 仅留档、不作权威。
+- 备份目录 `/opt/zhichao-backups/<stamp>/`，任何文件改前先备份。
 
-### C. `gzip_static on`
-站点开了预压缩，发的是 `.gz`。改任何文本文件（html/js/css/json）都必须 `gzip -9 -c x > x.gz` 一起传，否则线上仍是旧内容；传完 `gzip -t` 校验。
+### B. 前端组件设计（均内联 `index.html`，无独立 js/css）
+- 四个原生 `<dialog>`：`#artDlg`（9 秒 CG + Swiper coverflow 卡组 + 查看全部）、`#artDetailDlg`（单卡大图 + 职责 tag + 服装设定）、`#artGalleryDlg`（六套立绘网格，GLightbox 全屏）、`#artUploadDlg`（上传表单）。
+- 开源库落 `vendor/` 本地、不依赖公网 CDN、随 git 提交：Swiper 11.2.6（coverflow）、GLightbox 3.3.0（灯箱）；`/vendor` 受 `auth_request` 保护，匿名 401。
+- 自定义上传控件：隐藏原生 `input[type=file]`，`#upPickBtn` 触发 `click()`、`#upFileName` 显示文件名；错误按 413/401/其他分类提示。
+- 立绘 `object-fit:contain` 保全身不裁（旧 `cover` 裁头顶裙摆）。
+- 组件坑：① dialog 的 top-layer 盖普通 fixed 灯箱，先 `close()` 延迟 90ms 再 `openAt`，关闭回调 `showModal` 恢复；② GLightbox 用 `openAt(idx)` 非 `open`，selector 空则无 slides；③ Swiper `loop` 克隆 DOM，数据一律读固定 `ART_SET` 数组；④ 灯箱重建前先 `destroy()` 旧实例。
 
-### D. 更新日志格式（曾把新条目排到看不见的地方）
-- `at` 必须是 `YYYY-MM-DDTHH:mm:ss+08:00`，**不能写成 `YYYY-MM-DD HH:mm`**：空格比 `T` 小，字符串排序会把这类条目压到最底部，时间也渲染成「—」。
-- 前端已兼容两种写法（`logMs()` / `logHM()`），但请按规范写，不要依赖兼容。
-- `openLog()` 每次打开都带 `?t=` 重新拉取；不要恢复「只加载一次」的内存缓存，否则页面开着不动就永远看到旧日志。
+### C. 标准工作流（闭环）
+改源 → 本地预览校验 → 记 md5 → 服务器备份 → scp 上传（不丢散件）→ 文本文件重生成 `.gz`（`gzip_static`）→ nginx 改则 `nginx -t` 后 reload、后端改才 restart 对应容器 → 线上回归（md5 逐项一致、首页 200、匿名受保护资源仍 401、专项验证）→ 写 changelog（权威在 `/data`）+ OPS，日志是线上文件则再部署一次。
 
-### E. 部署检查单（缺一不可）
-1. 本机 `md5sum` 记下 `index.html` / js / css / data 各文件哈希；
-2. 服务器 `cp` 到 `/opt/zhichao-backups/<stamp>/`；
-3. `scp` 覆盖（js/css 进各自子目录，别往根目录丢散件）；**改了更新日志则同时写 `/opt/zhichao-memory/data/changelog.json`（权威）与 `/opt/zhichao/data/changelog.json`（备份）**，两份保持一致；
-4. `gzip -9` 重生成 `.gz` 并 `gzip -t`；
-5. 线上与本机 `md5sum` 逐项一致；
-6. `curl -sI http://127.0.0.1/` 确认 200 且 `Cache-Control` 正确，`curl` 页面 `grep` 到本轮新增的关键代码；
-7. 匿名访问 `/data/`、`/api/memory`、`/assets/*`、`/vendor/*` 仍是 401；
-8. 只有改 `server.py` 才 `docker restart zhichao-memory`。
-9. 最后补 `data/changelog.json` 条目 + `OPS-CHANGELOG.md` 详细记录，再按上面的流程**再部署一次**（日志本身也是线上文件）。
+### D. 注意事项（红线与坑）
+- nginx 只 reload、**不 restart web**；只有改 `server.py` 才 `docker restart zhichao-memory`（会话已持久化不掉线）。禁止 `compose down/stop`、删卷、装依赖、动 `.env`/数据库。
+- 缓存：html/js/css `no-cache, must-revalidate` 走 ETag；改带 `?v=` 引用的资源同步递增版本号；不要回退 `max-age`。
+- `gzip_static` 发的是 `.gz`，改任何文本必须重生成同名 `.gz` 并 `gzip -t`。
+- 请求体：server 块全局 `client_max_body_size 15m`（默认 1m 致 413；auth 子请求也校验 body，只在 location 设会被打成 500）。
+- 正则 location 须带前缀 `^/(js|styles)/...`，裸 `~* \.(js|css)$` 会抢在 `/vendor` 前绕过 `auth_request`。
+- changelog 时间用 ISO8601（`T` 分隔），权威副本 `/data/changelog.json`；部署前先拉取合并，避免覆盖网页已标的「重要」。
+- SSH 限流：冷却后单连接，大文件走 base64 管道避开 ARG_MAX 与 scp 断连；远端命令用单引号防变量展开。
 
-### F. 本机预览
-`cd ~/zhichao && (setsid nohup python3 dev/preview_server.py 8811 >dev/.preview.log 2>&1 &)`，打开 `http://127.0.0.1:8811/`；进程会被环境回收，报 `ERR_CONNECTION_REFUSED` 先重起。`/tmp` 会被清空，预览脚本必须留在仓库里。
+### E. 静态资源目录速查（`cloud/assets/`，服务器结构一致）
+| 目录 | 内容 |
+|---|---|
+| `brand/` `cover/` | 站点图标/触屏图标；书封与卡片封面 |
+| `chat/` | 六套内置立绘（三形态昼夜，随 git） |
+| `emo/` `ui/` | 空态/情绪表情；门与 UI 素材 |
+| `mascot/`（`pose/chibi/sticker/scene` 及根） | 分类姿态、头像小表情、贴纸、群聊场景、首屏分层 |
+| `music/` `voice/` | BGM（配 `data/music.json`）与三形态配音 |
+| `art/` | CG 视频 `intro-cg.mp4`，gitignore 排除、单独 scp |
+| `self-upload/` | 仅 README 占位，上传图实际在服务器 `/data/art/` |
+| `_archive/` | 历史备份，不参与线上引用 |
 
-### G. 验证交互的两个坑
-- 程序化 `el.click()` 不触发 `pointerdown`，所以点击音效类改动**不能**用它验证，要用 Playwright 的 `locator.click()`。
-- 音频要验播放状态，看 `ZCBgm.current()` / `document.querySelector('audio').paused`，不能只看有没有 `Audio` 元素。
+### F. 上传接口 `/api/art`
+- 存储：静态目录只读，上传图落 `/data/art/`、清单落 `/data/gallery.json`，后端 `GET /api/art/file/<name>` 鉴权回吐，**不进 git、不进静态目录**；内置六套由 `ART_SET` 兜底。
+- 端点：`GET /api/art` 清单；`POST /api/art`（`{name≤40,tag≤20,group:day|night,ds≤300,dataUrl}`）；`DELETE /api/art/<id>`；`GET /api/art/file/<name>`（basename 防穿越）。
+- 安全：MIME 白名单 webp/png/jpeg、单图解码 ≤6MB、请求体 ≤14MB；`mkstemp`+`os.replace` 原子落盘；文件名服务端生成（时间戳+`token_hex(4)`），不接受用户原名；`escHtml()` 转义后渲染。
+- 本地 `cloud/assets/self-upload/` 只放 README，gitignore 用 `self-upload/*` + `!README.md` 放行。
 
 ## 五点六、群聊模式（单人三形态 + 主人）
 
@@ -279,3 +285,9 @@
 4. 一次变更一条；同一轮多个独立改动可分多条。禁止事后补写时凭记忆编造时间，时间以实际操作时间为准。
 5. 写好后 scp 到 `/opt/zhichao-memory/data/changelog.json`（线上实际读这份）与 `/opt/zhichao/data/changelog.json`（备份），保持两份一致；站点静态 `.gz` 已不被读取，不再需要生成。
 6. 每条 entry 可带 `important: true`（重要更新）；缺省即普通更新。该字段由网页上的星标按钮通过 `POST /api/changelog` 写入，**部署新日志前先拉取容器里的当前文件再合并新条目**，否则会覆盖掉已标好的重要标记。
+
+---
+
+> 网站更新、形象页、上传接口的完整工作流与组件设计统一见上文「五点五」；通用可复用版见技能 `website-update-workflow`。
+
+

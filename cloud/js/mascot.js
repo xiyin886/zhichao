@@ -18,9 +18,9 @@
     bodyNight: 'assets/mascot/layer-body-night.webp',
     backhair: 'assets/mascot/layer-backhair.webp',
     faces: {
-      hi: 'assets/chibi-hi.webp',
-      love: 'assets/chibi-love.png',
-      lie: 'assets/chibi-lie.webp'
+      hi: 'assets/mascot/chibi/chibi-hi.webp',
+      love: 'assets/mascot/chibi/chibi-love.png',
+      lie: 'assets/mascot/chibi/chibi-lie.webp'
     }
   };
 

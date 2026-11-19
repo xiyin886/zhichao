@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <meta name="color-scheme" content="light dark">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png">
-<link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/brand/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/brand/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/brand/apple-touch-icon.png">
 <link rel="preconnect" href="https://miaoda.feishu.cn">
 <link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Noto+Serif+SC:wght@500;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap">
 <title>知潮 · 热点推送</title>
@@ -404,9 +404,9 @@ button{font-family:inherit}
   font-size:11px;color:var(--muted);line-height:1.9;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
 
 /* ---- 阅读弹窗 ---- */
-#reader,#logDlg,#trashDlg{border:0;padding:0;background:transparent;max-width:720px;width:calc(100% - 32px);margin:auto;color:var(--text)}
-#reader::backdrop,#logDlg::backdrop,#trashDlg::backdrop{background:rgba(58,48,58,.42);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
-#reader[open],#logDlg[open],#trashDlg[open]{animation:pop .22s ease both}
+#reader,#logDlg,#trashDlg,#artDlg,#artDetailDlg,#artGalleryDlg{border:0;padding:0;background:transparent;max-width:720px;width:calc(100% - 32px);margin:auto;color:var(--text)}
+#reader::backdrop,#logDlg::backdrop,#trashDlg::backdrop,#artDlg::backdrop,#artDetailDlg::backdrop,#artGalleryDlg::backdrop{background:rgba(58,48,58,.42);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+#reader[open],#logDlg[open],#trashDlg[open],#artDlg[open],#artDetailDlg[open],#artGalleryDlg[open]{animation:pop .22s ease both}
 @keyframes pop{from{opacity:0;transform:translateY(12px) scale(.99)}to{opacity:1;transform:none}}
 .rdr{position:relative;background:var(--glass-strong);-webkit-backdrop-filter:blur(24px) saturate(1.3);backdrop-filter:blur(24px) saturate(1.3);
   border:1px solid var(--line);border-radius:26px;box-shadow:var(--shadow-lift);max-height:86vh;overflow-y:auto;padding:26px 30px 24px}
@@ -575,6 +575,125 @@ html[data-zc-theme="dark"] .rdr-del:hover{color:#f2bcc5;border-color:rgba(242,18
   background:var(--glass);color:var(--accent);font-size:11.5px;cursor:pointer;transition:.15s}
 .trash-item .restore:hover{border-color:var(--accent);background:var(--accent-soft)}
 .trash-empty{padding:24px 0;text-align:center;font-size:12px;color:var(--muted)}
+
+/* ---- 汐音·形象 ---- */
+#artDlg{max-width:960px}
+.art-wrap{position:relative;max-height:88vh;overflow-y:auto;background:var(--glass-strong);-webkit-backdrop-filter:blur(24px) saturate(1.3);backdrop-filter:blur(24px) saturate(1.3);
+  border-radius:26px;padding:26px 24px 24px;border:1px solid var(--line-soft);box-shadow:0 24px 60px rgba(90,60,80,.28)}
+.art-wrap:before{content:"";position:absolute;left:0;top:0;right:0;height:5px;border-radius:26px 26px 0 0;
+  background:linear-gradient(90deg,var(--accent),var(--accent-2))}
+.art-head{margin-bottom:16px;padding-right:34px}
+.art-head h2{font-family:var(--serif);font-size:22px;margin:0 0 4px;font-weight:700;letter-spacing:1px}
+.art-head .sub{font-size:12px;color:var(--muted);letter-spacing:1px;line-height:1.6}
+.art-video{width:100%;aspect-ratio:16/9;border-radius:18px;overflow:hidden;background:#0d0b10;margin-bottom:10px;border:1px solid var(--line-soft)}
+.art-video video{width:100%;height:100%;display:block;object-fit:contain}
+.art-note{font-size:12px;color:var(--muted);margin:0 0 10px;line-height:1.7}
+
+/* ---- 汐音·形象：Swiper coverflow 卡组（错位堆叠，悬停抽出，点击看详情） ---- */
+.art-deck{position:relative;margin:4px 0 6px}
+.artSwiper{padding:26px 0 48px;overflow:visible}
+.artSwiper .swiper-slide{width:208px;height:332px;opacity:.5;cursor:pointer}
+.artSwiper .swiper-slide-active{opacity:1}
+.art-card{position:relative;width:100%;height:100%;border:1px solid var(--line-soft);border-radius:18px;background:var(--glass-soft);overflow:hidden;
+  display:flex;flex-direction:column;box-shadow:0 10px 26px rgba(90,60,80,.18);
+  transition:transform .28s ease,box-shadow .28s ease}
+.artSwiper .swiper-slide:hover{opacity:1;z-index:10}
+.artSwiper .swiper-slide:hover .art-card{transform:translateY(-18px) scale(1.05);box-shadow:0 26px 50px rgba(90,60,80,.4);border-color:var(--accent)}
+.art-card .ph{flex:1;display:grid;place-items:center;overflow:hidden;background:var(--chip)}
+.art-card .ph img{width:100%;height:100%;object-fit:contain;object-position:center}
+.art-card .info{padding:9px 12px 11px;text-align:center}
+.art-card .nm{font-family:var(--serif);font-size:14px;font-weight:700;color:var(--text);display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap}
+.art-card .tag{font-size:10px;color:var(--accent);background:var(--accent-soft);border-radius:999px;padding:2px 8px;letter-spacing:1px;font-weight:700}
+.artSwiper .swiper-pagination{bottom:10px}
+.artSwiper .swiper-pagination-bullet{background:var(--muted);opacity:.45}
+.artSwiper .swiper-pagination-bullet-active{background:var(--accent);opacity:1}
+
+/* 单卡详情弹窗 */
+#artDetailDlg{max-width:560px}
+.art-detail{position:relative;max-height:86vh;overflow-y:auto;background:var(--glass-strong);-webkit-backdrop-filter:blur(24px) saturate(1.3);backdrop-filter:blur(24px) saturate(1.3);
+  border-radius:24px;padding:24px 22px;border:1px solid var(--line-soft);box-shadow:0 24px 60px rgba(90,60,80,.3)}
+.art-detail .big{width:100%;max-height:56vh;display:grid;place-items:center;background:var(--chip);border-radius:16px;overflow:hidden;margin-bottom:14px}
+.art-detail .big img{max-width:100%;max-height:56vh;object-fit:contain}
+.art-detail .nm{font-family:var(--serif);font-size:20px;font-weight:700;display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:8px}
+.art-detail .ds{font-size:13px;color:var(--muted);line-height:1.8}
+@media(max-width:760px){.artSwiper .swiper-slide{width:168px;height:288px}.art-wrap{padding:20px 16px 18px}}
+
+/* ---- 汐音·形象：查看全部立绘集（GLightbox 灯箱） ---- */
+.art-gallery-cta{display:flex;justify-content:center;margin:14px 0 4px}
+.art-gallery-btn{display:inline-flex;align-items:center;gap:9px;cursor:pointer;
+  font-family:var(--serif);font-size:14px;font-weight:700;letter-spacing:1.5px;color:var(--accent);
+  background:var(--accent-soft);border:1px solid var(--accent);border-radius:999px;
+  padding:11px 24px;transition:transform .25s ease,box-shadow .25s ease,background .25s ease}
+.art-gallery-btn .g-ic{font-size:13px;line-height:1;animation:gspin 4s linear infinite}
+.art-gallery-btn .g-arrow{transition:transform .25s ease}
+.art-gallery-btn:hover{transform:translateY(-2px);background:var(--accent);color:#fff;box-shadow:0 14px 30px rgba(173,127,143,.4)}
+.art-gallery-btn:hover .g-arrow{transform:translateX(4px)}
+@keyframes gspin{to{transform:rotate(360deg)}}
+
+#artGalleryDlg{max-width:880px}
+.art-gallery-wrap{position:relative;max-height:88vh;overflow-y:auto;background:var(--glass-strong);-webkit-backdrop-filter:blur(24px) saturate(1.3);backdrop-filter:blur(24px) saturate(1.3);
+  border-radius:26px;padding:26px 24px 26px;border:1px solid var(--line-soft);box-shadow:0 24px 60px rgba(90,60,80,.28)}
+.art-gallery-wrap:before{content:"";position:absolute;left:0;top:0;right:0;height:5px;border-radius:26px 26px 0 0;
+  background:linear-gradient(90deg,var(--accent),var(--accent-2))}
+.art-gallery-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:10px}
+.g-item{position:relative;display:flex;flex-direction:column;border:1px solid var(--line-soft);border-radius:18px;
+  background:var(--glass-soft);overflow:hidden;text-decoration:none;color:var(--text);cursor:zoom-in;
+  box-shadow:0 10px 26px rgba(90,60,80,.16);transition:transform .28s ease,box-shadow .28s ease,border-color .28s ease}
+.g-item:hover{transform:translateY(-8px);border-color:var(--accent);box-shadow:0 22px 44px rgba(173,127,143,.36)}
+.g-item .g-ph{position:relative;aspect-ratio:2/3;display:grid;place-items:center;overflow:hidden;background:var(--chip)}
+.g-item .g-ph img{width:100%;height:100%;object-fit:contain;object-position:center;transition:transform .4s ease}
+.g-item:hover .g-ph img{transform:scale(1.04)}
+.g-item .g-zoom{position:absolute;right:9px;top:9px;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;
+  background:rgba(255,255,255,.78);color:var(--accent);font-size:13px;opacity:0;transform:scale(.7);transition:all .25s ease}
+.g-item:hover .g-zoom{opacity:1;transform:scale(1)}
+.g-item .g-info{padding:10px 12px 12px;text-align:center}
+.g-item .g-nm{font-family:var(--serif);font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap}
+.g-item .g-ds{font-size:11px;color:var(--muted);line-height:1.6;margin-top:5px}
+@media(max-width:760px){.art-gallery-grid{grid-template-columns:repeat(2,1fr);gap:12px}.art-gallery-wrap{padding:20px 16px 18px}}
+@media(max-width:460px){.art-gallery-grid{grid-template-columns:1fr 1fr}.g-item .g-ds{display:none}}
+
+/* 立绘集头部：上传小按钮 */
+.art-head-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.art-upload-btn{display:inline-flex;align-items:center;gap:7px;cursor:pointer;font-size:12.5px;font-weight:700;letter-spacing:1px;
+  color:var(--accent);background:var(--accent-soft);border:1px solid var(--accent);border-radius:999px;padding:7px 16px;
+  transition:transform .2s ease,background .2s ease,color .2s ease;flex:0 0 auto}
+.art-upload-btn:hover{transform:translateY(-1px);background:var(--accent);color:#fff}
+/* 上传项卡片的删除钮 */
+.g-del{position:absolute;left:9px;top:9px;width:24px;height:24px;border-radius:50%;border:none;cursor:pointer;
+  background:rgba(60,40,50,.55);color:#fff;font-size:14px;line-height:1;display:grid;place-items:center;opacity:0;
+  transition:opacity .2s ease,background .2s ease;z-index:2}
+.g-item:hover .g-del{opacity:1}
+.g-del:hover{background:#c0566a}
+.g-item.builtin .g-del{display:none}
+
+/* 上传立绘表单弹窗 */
+#artUploadDlg{max-width:460px}
+.art-upload{position:relative;max-height:86vh;overflow-y:auto;background:var(--glass-strong);-webkit-backdrop-filter:blur(24px) saturate(1.3);
+  backdrop-filter:blur(24px) saturate(1.3);border-radius:22px;padding:24px 22px;border:1px solid var(--line-soft);box-shadow:0 24px 60px rgba(90,60,80,.28)}
+.art-upload h3{font-family:var(--serif);font-size:19px;margin-bottom:4px}
+.art-upload .up-sub{font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.6}
+.up-preview{width:100%;max-height:30vh;display:grid;place-items:center;background:var(--chip);border-radius:14px;overflow:hidden;margin-bottom:14px;aspect-ratio:2/3;max-width:200px;margin-inline:auto}
+.up-preview img{max-width:100%;max-height:30vh;object-fit:contain}
+.up-preview.empty{color:var(--muted);font-size:12.5px;aspect-ratio:auto;padding:26px 10px}
+.up-field{margin-bottom:12px}
+.up-field label{display:block;font-size:12.5px;font-weight:700;color:var(--accent);margin-bottom:5px;letter-spacing:1px}
+.up-field input[type=text],.up-field textarea,.up-field select{width:100%;box-sizing:border-box;background:var(--chip);border:1px solid var(--line-soft);
+  border-radius:11px;padding:9px 12px;font-size:13.5px;color:var(--text);font-family:inherit;outline:none}
+.up-field textarea{min-height:64px;resize:vertical;line-height:1.6}
+.up-field input:focus,.up-field textarea:focus,.up-field select:focus{border-color:var(--accent)}
+.up-file{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.up-file input[type=file]{display:none}
+.up-pick{display:inline-flex;align-items:center;gap:7px;cursor:pointer;font-size:12.5px;font-weight:700;letter-spacing:1px;
+  color:var(--accent);background:var(--accent-soft);border:1px dashed var(--accent);border-radius:999px;padding:9px 18px;
+  transition:transform .2s ease,background .2s ease,color .2s ease}
+.up-pick:hover{transform:translateY(-1px);background:var(--accent);color:#fff}
+.up-pick-icon{font-size:15px;line-height:1}
+.up-filename{font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px}
+.up-actions{display:flex;gap:10px;margin-top:16px;justify-content:flex-end}
+.up-cancel{padding:9px 18px;border-radius:999px;border:1px solid var(--line-soft);background:transparent;color:var(--muted);cursor:pointer;font-size:13px}
+.up-submit{padding:9px 22px;border-radius:999px;border:none;cursor:pointer;font-size:13.5px;font-weight:700;color:#fff;background:var(--accent)}
+.up-submit:disabled{opacity:.55;cursor:default}
+.up-err{color:#c0566a;font-size:12.5px;margin-top:8px;min-height:16px}
 
 /* ---- 更新日志：日期分组 ---- */
 .log-wrap{max-height:84vh}
@@ -830,7 +949,7 @@ html[data-zc-theme="dark"] .rdr-del:hover{color:#f2bcc5;border-color:rgba(242,18
   .pager{justify-content:space-between;gap:10px}
   .pg-nums,.pg-info{display:none}
   .pg-btn{flex:1;text-align:center;padding:10px 12px}
-  #reader,#logDlg,#trashDlg{width:100%;max-width:100%;margin:auto auto 0}
+  #reader,#logDlg,#trashDlg,#artDlg,#artDetailDlg,#artGalleryDlg{width:100%;max-width:100%;margin:auto auto 0}
   #reader[open],#logDlg[open],#trashDlg[open]{animation:up .24s ease both}
   .log-wrap{border-radius:26px 26px 0;max-height:90vh;padding:23px 19px 21px}
   @keyframes up{from{opacity:.5;transform:translateY(48px)}to{opacity:1;transform:none}}
@@ -865,7 +984,7 @@ html[data-zc-theme="dark"] .rdr-del:hover{color:#f2bcc5;border-color:rgba(242,18
 .chat-side-spark{position:absolute;inset:0;background:radial-gradient(circle at 50% 28%,rgba(255,255,255,.55),transparent 62%)}
 /* 群聊专属：生活场景群像（夜晚客厅，三人各自在手边做事） */
 .chat-scene{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .35s ease;
-  background:url("assets/group-xiyin-home.webp") center 44%/contain no-repeat}
+  background:url("assets/mascot/scene/group-xiyin-home.webp") center 44%/contain no-repeat}
 .chat-side.group-mode .chat-scene{opacity:1}
 .chat-side.group-mode .chat-flip,.chat-side.group-mode .chat-flip-hint{display:none}
 .chat-side.group-mode .chat-idplate{background:linear-gradient(180deg,transparent 2%,rgba(255,249,251,.94))}
@@ -960,6 +1079,8 @@ html[data-zc-theme="dark"] .rdr-del:hover{color:#f2bcc5;border-color:rgba(242,18
 <link rel="stylesheet" href="styles/mascot.css?v=20261116c">
 <link rel="stylesheet" href="styles/checkin.css?v=20261116c">
 <link rel="stylesheet" href="styles/clock.css?v=20261116c">
+<link rel="stylesheet" href="vendor/swiper-bundle.min.css?v=20261119a">
+<link rel="stylesheet" href="vendor/glightbox.min.css?v=20261119b">
 </head>
 <body>
 
@@ -968,11 +1089,11 @@ html[data-zc-theme="dark"] .rdr-del:hover{color:#f2bcc5;border-color:rgba(242,18
 <div id="gateWrap">
   <div class="tug">
     <div class="pull pull-l">
-      <img id="pullL" src="assets/gate-pull-l.webp" alt="汐音用力向左拉" width="825" height="1100">
+      <img id="pullL" src="assets/ui/gate-pull-l.webp" alt="汐音用力向左拉" width="825" height="1100">
       <i class="rope-ext rl" aria-hidden="true"></i>
     </div>
     <div id="gate">
-      <img class="seal" src="assets/icon-192.png" alt="知潮" width="58" height="58">
+      <img class="seal" src="assets/brand/icon-192.png" alt="知潮" width="58" height="58">
       <h1>知潮</h1>
       <p class="gsub">PRIVATE READING ROOM</p>
       <input id="code" type="password" placeholder="请输入访问口令" autocomplete="off" aria-label="访问口令">
@@ -981,12 +1102,12 @@ html[data-zc-theme="dark"] .rdr-del:hover{color:#f2bcc5;border-color:rgba(242,18
     </div>
     <div class="pull pull-r">
       <i class="rope-ext rr" aria-hidden="true"></i>
-      <img id="pullR" src="assets/gate-pull-r.webp" alt="汐音用力向右拉" width="825" height="1100">
+      <img id="pullR" src="assets/ui/gate-pull-r.webp" alt="汐音用力向右拉" width="825" height="1100">
     </div>
   </div>
   <div class="swing">
     <div class="swing-stage">
-      <img class="swing-img" src="assets/gate-swing.webp" alt="汐音坐在月牙秋千上轻轻荡着" width="1254" height="1881">
+      <img class="swing-img" src="assets/ui/gate-swing.webp" alt="汐音坐在月牙秋千上轻轻荡着" width="1254" height="1881">
     </div>
   </div>
 </div>
@@ -994,11 +1115,15 @@ html[data-zc-theme="dark"] .rdr-del:hover{color:#f2bcc5;border-color:rgba(242,18
 <div class="shell" id="app" hidden>
   <aside class="rail">
     <div class="brand">
-      <img class="logo" src="assets/icon-192.png" alt="知潮" width="36" height="36">
+      <img class="logo" src="assets/brand/icon-192.png" alt="知潮" width="36" height="36">
       <b id="siteName">知潮</b>
     </div>
     <div class="menu-label">导航</div>
     <nav id="filters" aria-label="分类导航"></nav>
+    <button class="menu-item log-btn" id="artBtn" style="--c:var(--accent)">
+      <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.8H20l-4.9 3.6 1.9 5.8L12 14.6l-5 3.6 1.9-5.8L4 8.8h6.1z"/></svg></span>
+      <span class="lb">汐音·形象</span>
+    </button>
     <button class="menu-item log-btn" id="logBtn" style="--c:var(--accent-2)">
       <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 1.8"/></svg></span>
       <span class="lb">更新日志</span>
@@ -1023,7 +1148,7 @@ html[data-zc-theme="dark"] .rdr-del:hover{color:#f2bcc5;border-color:rgba(242,18
       <svg class="corner-deco" style="left:26%;top:60px" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.2 6.8L21 11l-6.8 2.2L12 20l-2.2-6.8L3 11l6.8-2.2z"/></svg>
       <svg class="corner-deco" style="left:38%;top:108px;animation-delay:1.4s" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
       <svg class="corner-deco" style="left:14%;top:150px;animation-delay:2.6s" width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.2 6.8L21 11l-6.8 2.2L12 20l-2.2-6.8L3 11l6.8-2.2z"/></svg>
-      <img class="mascot" data-src="assets/mascot.webp" data-src-night="assets/mascot-night.webp" alt="知潮看板娘汐音" width="230">
+      <img class="mascot" data-src="assets/mascot/pose/mascot.webp" data-src-night="assets/mascot/pose/mascot-night.webp" alt="知潮看板娘汐音" width="230">
       <div class="page-head">
         <h1 id="pageTitle">今日热点推送</h1>
         <p id="tagline"></p>
@@ -1055,7 +1180,7 @@ html[data-zc-theme="dark"] .rdr-del:hover{color:#f2bcc5;border-color:rgba(242,18
           <div class="ckc-ticks" aria-hidden="true"><b>0</b><b>6</b><b>12</b><b>18</b><b>24</b></div>
           <span class="ckc-tip" id="ckcTip"></span>
         </div>
-        <p class="ckc-say"><img class="ckc-face" data-src="assets/chibi-hi.webp" alt="" width="26" height="26"><span class="q">“</span><span id="ckcSay">汐音正在看钟…</span></p>
+        <p class="ckc-say"><img class="ckc-face" data-src="assets/mascot/chibi/chibi-hi.webp" alt="" width="26" height="26"><span class="q">“</span><span id="ckcSay">汐音正在看钟…</span></p>
       </section>
 
       <div class="grid">
@@ -1090,7 +1215,7 @@ html[data-zc-theme="dark"] .rdr-del:hover{color:#f2bcc5;border-color:rgba(242,18
             </div>
             <div class="ck-stage">
               <span class="ck-aura" aria-hidden="true"></span>
-              <img class="ck-chibi" id="ckChibi" data-src="assets/chibi-hi.webp" alt="汐音" width="94" height="94">
+              <img class="ck-chibi" id="ckChibi" data-src="assets/mascot/chibi/chibi-hi.webp" alt="汐音" width="94" height="94">
               <div class="ck-bubble"><span class="ck-say" id="ckSay">今天还没来呢～</span></div>
             </div>
             <div class="ck-trail-wrap">
@@ -1213,12 +1338,137 @@ html[data-zc-theme="dark"] .rdr-del:hover{color:#f2bcc5;border-color:rgba(242,18
   </div>
 </dialog>
 
+<dialog id="artDlg" aria-labelledby="artTitle">
+  <div class="art-wrap">
+    <button class="rdr-close" id="artClose" aria-label="关闭">×</button>
+    <div class="art-head">
+      <h2 id="artTitle">汐音 · 形象</h2>
+      <p class="sub">三形态 × 日夜六套装束 · 潮间编辑部小屋 CG</p>
+    </div>
+    <div class="art-video">
+      <video id="artVideo" controls playsinline preload="metadata" poster="assets/mascot/scene/group-xiyin-home.webp" data-src="assets/art/intro-cg.mp4"></video>
+    </div>
+    <p class="art-note">九秒 CG：同一间编辑部小屋从清晨暖粉流转到深夜深紫，六套装束各自忙活；点视频可重播。</p>
+    <div class="art-deck">
+      <div class="swiper artSwiper">
+        <div class="swiper-wrapper">
+          <div class="swiper-slide">
+            <div class="art-card" data-img="assets/chat/chat-xiyin-day.webp" data-name="御姐 · 昼" data-tag="主编" data-ds="淡紫藕荷高开叉蕾丝长裙、露肩薄纱袖、金链星饰，倚窗审稿摞稿。">
+              <div class="ph"><img data-src="assets/chat/chat-xiyin-day.webp" alt="日间御姐" loading="lazy"></div>
+              <div class="info"><div class="nm">御姐 · 昼<span class="tag">主编</span></div></div>
+            </div>
+          </div>
+          <div class="swiper-slide">
+            <div class="art-card" data-img="assets/chat/chat-xiyin-day-cute.webp" data-name="少女 · 昼" data-tag="记录" data-ds="白上衣配粉灰燕尾洛丽塔、灰蝴蝶结、粉玫瑰刺绣，提笔记手账、贴来源便签。">
+              <div class="ph"><img data-src="assets/chat/chat-xiyin-day-cute.webp" alt="日间少女" loading="lazy"></div>
+              <div class="info"><div class="nm">少女 · 昼<span class="tag">记录</span></div></div>
+            </div>
+          </div>
+          <div class="swiper-slide">
+            <div class="art-card" data-img="assets/chat/chat-xiyin-day-girl.webp" data-name="萝莉 · 昼" data-tag="报喜" data-ds="白蕾丝层叠洋装、粉紫蓝浪纹裙摆、月牙星玫瑰发饰，举方向卡欢呼拍墙。">
+              <div class="ph"><img data-src="assets/chat/chat-xiyin-day-girl.webp" alt="日间萝莉" loading="lazy"></div>
+              <div class="info"><div class="nm">萝莉 · 昼<span class="tag">报喜</span></div></div>
+            </div>
+          </div>
+          <div class="swiper-slide">
+            <div class="art-card" data-img="assets/chat/chat-xiyin.webp" data-name="御姐 · 夜" data-tag="定稿" data-ds="黑鱼尾长裙、黑蕾丝披肩、暗红束腰蝴蝶结，台灯下笔定稿、折稿入屉。">
+              <div class="ph"><img data-src="assets/chat/chat-xiyin.webp" alt="夜间御姐" loading="lazy"></div>
+              <div class="info"><div class="nm">御姐 · 夜<span class="tag">定稿</span></div></div>
+            </div>
+          </div>
+          <div class="swiper-slide">
+            <div class="art-card" data-img="assets/chat/chat-xiyin-cute.webp" data-name="少女 · 夜" data-tag="核验" data-ds="黑头纱面纱、黑灰哥特蕾丝洋装，捧烛走过墙板，翻面搁置存疑便签。">
+              <div class="ph"><img data-src="assets/chat/chat-xiyin-cute.webp" alt="夜间少女" loading="lazy"></div>
+              <div class="info"><div class="nm">少女 · 夜<span class="tag">核验</span></div></div>
+            </div>
+          </div>
+          <div class="swiper-slide">
+            <div class="art-card" data-img="assets/chat/chat-xiyin-girl.webp" data-name="萝莉 · 夜" data-tag="打烊" data-ds="黑女仆洋装白围裙、黑礼帽暗红缎带，提月牙灯笼绕屋拧灭灯串。">
+              <div class="ph"><img data-src="assets/chat/chat-xiyin-girl.webp" alt="夜间萝莉" loading="lazy"></div>
+              <div class="info"><div class="nm">萝莉 · 夜<span class="tag">打烊</span></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="swiper-pagination"></div>
+      </div>
+    </div>
+    <div class="art-gallery-cta">
+      <button class="art-gallery-btn" id="artGalleryBtn" type="button">
+        <span class="g-ic">✦</span><span>查看全部立绘集</span><span class="g-arrow">→</span>
+      </button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="artDetailDlg" aria-labelledby="artDetailName">
+  <div class="art-detail">
+    <button class="rdr-close" id="artDetailClose" aria-label="关闭">×</button>
+    <div class="big"><img id="artDetailImg" alt=""></div>
+    <div class="nm" id="artDetailName"></div>
+    <div class="ds" id="artDetailDs"></div>
+  </div>
+</dialog>
+
+<dialog id="artGalleryDlg" aria-labelledby="artGalleryTitle">
+  <div class="art-gallery-wrap">
+    <button class="rdr-close" id="artGalleryClose" aria-label="关闭">×</button>
+    <div class="art-head-row">
+      <div class="art-head">
+        <h2 id="artGalleryTitle">汐音 · 立绘集</h2>
+        <p class="sub">三形态 × 日夜六套装束一览 · 点击立绘放大观赏，可左右切换</p>
+      </div>
+      <button class="art-upload-btn" id="artUploadBtn" type="button">＋ 上传立绘</button>
+    </div>
+    <div class="art-gallery-grid" id="artGalleryGrid"></div>
+  </div>
+</dialog>
+
+<dialog id="artUploadDlg" aria-labelledby="artUploadTitle">
+  <div class="art-upload">
+    <button class="rdr-close" id="artUploadClose" aria-label="关闭">×</button>
+    <h3 id="artUploadTitle">上传新立绘</h3>
+    <p class="up-sub">选一张竖版立绘（webp / png / jpg，6MB 内），填好名称、职责与装束描述，保存后进入立绘集。</p>
+    <div class="up-preview empty" id="upPreview">预览区 · 先选图</div>
+    <div class="up-file">
+      <input type="file" id="upFile" accept="image/webp,image/png,image/jpeg">
+      <button type="button" class="up-pick" id="upPickBtn">
+        <span class="up-pick-icon">＋</span>选择图片
+      </button>
+      <span class="up-filename" id="upFileName">未选择文件</span>
+    </div>
+    <div class="up-field">
+      <label>名称</label>
+      <input type="text" id="upName" maxlength="40" placeholder="例：御姐 · 昼 · 春日版">
+    </div>
+    <div class="up-field">
+      <label>职责 / 标签（短）</label>
+      <input type="text" id="upTag" maxlength="20" placeholder="例：主编">
+    </div>
+    <div class="up-field">
+      <label>时段</label>
+      <select id="upGroup">
+        <option value="day">昼（暖粉）</option>
+        <option value="night">夜（深紫哥特）</option>
+      </select>
+    </div>
+    <div class="up-field">
+      <label>装束 / 动作描述</label>
+      <textarea id="upDs" maxlength="300" placeholder="服装、配饰、此刻在做什么……"></textarea>
+    </div>
+    <div class="up-err" id="upErr"></div>
+    <div class="up-actions">
+      <button class="up-cancel" id="upCancel" type="button">取消</button>
+      <button class="up-submit" id="upSubmit" type="button">保存立绘</button>
+    </div>
+  </div>
+</dialog>
+
 <dialog id="forgetDlg" aria-labelledby="forgetTitle">
   <div class="dlg-box">
     <div class="forget-face">
-      <img class="forget-face-img" data-form="mature" data-src="assets/chibi-cry-mature.webp" alt="御姐汐音含泪挽留" width="200" height="200">
-      <img class="forget-face-img" data-form="loli" data-src="assets/chibi-cry-loli.webp" alt="萝莉汐音大哭挽留" width="200" height="200">
-      <img class="forget-face-img" data-form="cute" data-src="assets/chibi-cry-cute.webp" alt="少女汐音啜泣挽留" width="200" height="200">
+      <img class="forget-face-img" data-form="mature" data-src="assets/mascot/chibi/chibi-cry-mature.webp" alt="御姐汐音含泪挽留" width="200" height="200">
+      <img class="forget-face-img" data-form="loli" data-src="assets/mascot/chibi/chibi-cry-loli.webp" alt="萝莉汐音大哭挽留" width="200" height="200">
+      <img class="forget-face-img" data-form="cute" data-src="assets/mascot/chibi/chibi-cry-cute.webp" alt="少女汐音啜泣挽留" width="200" height="200">
     </div>
     <h3 id="forgetTitle">真的要清空吗？</h3>
     <p class="dlg-name" id="forgetNote"></p>
@@ -1240,8 +1490,8 @@ html[data-zc-theme="dark"] .rdr-del:hover{color:#f2bcc5;border-color:rgba(242,18
       <div class="chat-scene" id="chatScene" aria-hidden="true"></div>
       <div id="chatFlip" class="chat-flip" title="点我翻转，换个造型">
         <div class="chat-flip-inner" id="chatFlipInner">
-          <img id="faceA" class="chat-stand face front" data-src="assets/chat-xiyin.webp" alt="汐音">
-          <img id="faceB" class="chat-stand face back" data-src="assets/chat-xiyin-cute.webp" alt="汐音">
+          <img id="faceA" class="chat-stand face front" data-src="assets/chat/chat-xiyin.webp" alt="汐音">
+          <img id="faceB" class="chat-stand face back" data-src="assets/chat/chat-xiyin-cute.webp" alt="汐音">
         </div>
       </div>
       <span class="chat-flip-hint" id="chatFlipHint">点我切换形态</span>
@@ -1278,6 +1528,8 @@ html[data-zc-theme="dark"] .rdr-del:hover{color:#f2bcc5;border-color:rgba(242,18
 </div>
 
 <script src="js/page-flip.min.js?v=20261117e"></script>
+<script src="vendor/swiper-bundle.min.js?v=20261119a"></script>
+<script src="vendor/glightbox.min.js?v=20261119b"></script>
 <script>
 /* ============================================================
    服务器端口令认证（前端不持有任何口令秘密）
@@ -2074,7 +2326,7 @@ function renderHot(items, cur){
     heroEl.hidden = true;
     heroEl.innerHTML = "";
     bodyEl.classList.add("only", "empty");
-    listEl.innerHTML = '<div class="empty flat"><img class="emo" src="assets/emo-sleepy.webp" alt="">' +
+    listEl.innerHTML = '<div class="empty flat"><img class="emo" src="assets/emo/emo-sleepy.webp" alt="">' +
       '<div class="et">' + (cur && cur.key !== "all" ? "这个范围还在打盹，换一处逛逛吧" : "今天还没翻到东西，等汐音再找找") + "</div></div>";
     return;
   }
@@ -2110,14 +2362,14 @@ function renderHot(items, cur){
     // 图片走丢：换汐音的晕晕表情包顶上，比空白灰块有意思
     const figEl = heroEl.querySelector(".spot-fig");
     figEl.className = "spot-fig ph emo";
-    figEl.innerHTML = '<img class="ph-sticker" src="assets/emo-dizzy.webp" alt="">' +
+    figEl.innerHTML = '<img class="ph-sticker" src="assets/emo/emo-dizzy.webp" alt="">' +
       '<span class="ph-cap">图片走丢了</span>';
     // 右边的小立绘留着：贴纸只是占位，不顶替她的位置
   };
 
   const rest = top.slice(1);
   if(!rest.length){
-    listEl.innerHTML = '<div class="spot-chibi"><img src="assets/chibi-hi.webp" alt=""><p>暂时只有这一条，稍后再来看看呀～</p></div>';
+    listEl.innerHTML = '<div class="spot-chibi"><img src="assets/mascot/chibi/chibi-hi.webp" alt=""><p>暂时只有这一条，稍后再来看看呀～</p></div>';
   } else {
     listEl.innerHTML = rest.map((i, idx) =>
       '<div class="spot-row" data-id="' + esc(i.id) + '" role="button" tabindex="0">' +
@@ -2224,7 +2476,7 @@ function renderTrash(){
   el.innerHTML = all.length
     ? all.map(i => '<div class="trash-item"><span class="tt">' + esc(i.title) +
       '</span><button class="restore" data-restore="' + esc(i.id) + '">恢复</button></div>').join("")
-    : '<div class="trash-empty"><img src="assets/emo-blank.webp" alt="">回收站空空的，一条都没丢过</div>';
+    : '<div class="trash-empty"><img src="assets/emo/emo-blank.webp" alt="">回收站空空的，一条都没丢过</div>';
   document.getElementById("restoreAll").disabled = !all.length;
 }
 function restoreItem(id){
@@ -2247,6 +2499,192 @@ document.getElementById("delConfirm").onclick = confirmDelete;
 document.getElementById("delCancel").onclick = () => delDlg.close();
 document.getElementById("delCancelX").onclick = () => delDlg.close();
 document.getElementById("trashBtn").onclick = openTrash;
+
+/* 汐音·形象：登录后打开才拉取视频与立绘，关闭时暂停视频；Swiper coverflow 卡组，点卡看详情 */
+let artSwiper = null;
+function openArt(){
+  artDlg.querySelectorAll("[data-src]").forEach(el => {
+    if (!el.getAttribute("src")) el.setAttribute("src", el.dataset.src);
+  });
+  if(!artDlg.open) artDlg.showModal();
+  if(!artSwiper){
+    requestAnimationFrame(() => {
+      artSwiper = new Swiper('.artSwiper', {
+        effect:'coverflow',
+        grabCursor:true,
+        centeredSlides:true,
+        slidesPerView:'auto',
+        loop:true,
+        keyboard:{enabled:true},
+        pagination:{el:'.artSwiper .swiper-pagination',clickable:true},
+        coverflowEffect:{rotate:8,stretch:0,depth:130,modifier:1,slideShadows:false}
+      });
+    });
+  }
+}
+document.getElementById("artBtn").onclick = openArt;
+document.getElementById("artClose").onclick = () => {
+  const v = document.getElementById("artVideo");
+  if (v) v.pause();
+  artDlg.close();
+};
+
+/* 点卡组卡片 → 弹出该卡完整立绘与设定详情 */
+document.querySelector('.artSwiper').addEventListener('click', e => {
+  const card = e.target.closest('.art-card');
+  if(!card) return;
+  document.getElementById('artDetailImg').src = card.dataset.img;
+  document.getElementById('artDetailName').innerHTML = card.dataset.name + '<span class="tag">'+card.dataset.tag+'</span>';
+  document.getElementById('artDetailDs').textContent = card.dataset.ds;
+  artDetailDlg.showModal();
+});
+document.getElementById('artDetailClose').onclick = () => artDetailDlg.close();
+
+/* 立绘集：内置六套兜底 + /api/art 拉取用户上传项合并；GLightbox 灯箱放大。
+   modal dialog 顶层叠层会盖住 fixed 灯箱，故点卡先关弹窗再 openAt，灯箱关闭回到立绘集。 */
+const ART_SET = [
+  {img:'assets/chat/chat-xiyin-day.webp',name:'御姐 · 昼',tag:'主编',ds:'淡紫藕荷高开叉蕾丝长裙、露肩薄纱袖、金链星饰，倚窗审稿摞稿。',builtIn:true},
+  {img:'assets/chat/chat-xiyin-day-cute.webp',name:'少女 · 昼',tag:'记录',ds:'白上衣配粉灰燕尾洛丽塔、灰蝴蝶结、粉玫瑰刺绣，提笔记手账、贴来源便签。',builtIn:true},
+  {img:'assets/chat/chat-xiyin-day-girl.webp',name:'萝莉 · 昼',tag:'报喜',ds:'白蕾丝层叠洋装、粉紫蓝浪纹裙摆、月牙星玫瑰发饰，举方向卡欢呼拍墙。',builtIn:true},
+  {img:'assets/chat/chat-xiyin.webp',name:'御姐 · 夜',tag:'定稿',ds:'黑鱼尾长裙、黑蕾丝披肩、暗红束腰蝴蝶结，台灯下笔定稿、折稿入屉。',builtIn:true},
+  {img:'assets/chat/chat-xiyin-cute.webp',name:'少女 · 夜',tag:'核验',ds:'黑头纱面纱、黑灰哥特蕾丝洋装，捧烛走过墙板，翻面搁置存疑便签。',builtIn:true},
+  {img:'assets/chat/chat-xiyin-girl.webp',name:'萝莉 · 夜',tag:'打烊',ds:'黑女仆洋装白围裙、黑礼帽暗红缎带，提月牙灯笼绕屋拧灭灯串。',builtIn:true}
+];
+const artGalleryDlg = document.getElementById('artGalleryDlg');
+const artGalleryGrid = document.getElementById('artGalleryGrid');
+let artLightbox = null;
+let galleryItems = [];      // 上传项（新→旧）
+let galleryLoaded = false;
+
+function escHtml(s){ return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function allArt(){ return galleryItems.concat(ART_SET); }
+
+async function fetchGallery(){
+  if(galleryLoaded) return;
+  try{
+    const r = await fetch('/api/art', {cache:'no-store'});
+    if(r.ok){
+      const doc = await r.json();
+      galleryItems = Array.isArray(doc.items) ? doc.items : [];
+    }
+  }catch(e){ galleryItems = []; }
+  galleryLoaded = true;
+}
+
+function buildGallery(){
+  artGalleryGrid.innerHTML = allArt().map(it => {
+    const del = it.builtIn ? '' : `<button class="g-del" data-del="${escHtml(it.id)}" title="删除">×</button>`;
+    return `<a class="g-item${it.builtIn?' builtin':''}" href="${it.img}" data-gallery="art-set" data-title="<b>${escHtml(it.name)}</b> <span class='tag'>${escHtml(it.tag)}</span>" data-description="${escHtml(it.ds)}">`
+      + del
+      + `<div class="g-ph"><img src="${it.img}" alt="${escHtml(it.name)}" loading="lazy"><span class="g-zoom">⌕</span></div>`
+      + `<div class="g-info"><div class="g-nm">${escHtml(it.name)}<span class="tag">${escHtml(it.tag)}</span></div><div class="g-ds">${escHtml(it.ds)}</div></div></a>`;
+  }).join('');
+}
+
+function bindLightbox(){
+  if(artLightbox){ try{ artLightbox.destroy(); }catch(e){} artLightbox = null; }
+  artLightbox = GLightbox({selector:'.g-item',gallery:{enabled:true},touchNavigation:true,zoomable:true,closeButton:true,moreLength:0});
+  artLightbox.on('close', () => { if(!artGalleryDlg.open) artGalleryDlg.showModal(); });
+}
+
+async function openGallery(){
+  artDlg.close();
+  await fetchGallery();
+  buildGallery();
+  artGalleryDlg.showModal();
+  bindLightbox();
+}
+
+async function removeArt(id){
+  if(!id) return;
+  if(!confirm('删除这张立绘？')) return;
+  try{
+    const r = await fetch('/api/art/' + encodeURIComponent(id), {method:'DELETE'});
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    galleryItems = galleryItems.filter(x => x.id !== id);
+    buildGallery(); bindLightbox();
+  }catch(err){ if(typeof toast === 'function') toast('删除没成功，再试一次？'); }
+}
+
+artGalleryGrid.addEventListener('click', e => {
+  const del = e.target.closest('.g-del');
+  if(del){ e.preventDefault(); e.stopPropagation(); removeArt(del.dataset.del); return; }
+  const a = e.target.closest('.g-item');
+  if(!a) return;
+  e.preventDefault();
+  const idx = [...artGalleryGrid.querySelectorAll('.g-item')].indexOf(a);
+  artGalleryDlg.close();
+  setTimeout(() => artLightbox.openAt(idx), 90);
+});
+document.getElementById('artGalleryBtn').onclick = openGallery;
+document.getElementById('artGalleryClose').onclick = () => artGalleryDlg.close();
+
+/* ---------- 上传立绘表单 ---------- */
+const artUploadDlg = document.getElementById('artUploadDlg');
+const upFile = document.getElementById('upFile');
+const upPreview = document.getElementById('upPreview');
+const upPickBtn = document.getElementById('upPickBtn');
+const upFileName = document.getElementById('upFileName');
+let upDataUrl = null;
+upPickBtn.onclick = () => upFile.click();
+document.getElementById('artUploadBtn').onclick = () => artUploadDlg.showModal();
+document.getElementById('artUploadClose').onclick = () => artUploadDlg.close();
+document.getElementById('upCancel').onclick = () => artUploadDlg.close();
+
+upFile.addEventListener('change', () => {
+  const f = upFile.files[0];
+  upDataUrl = null;
+  const err = document.getElementById('upErr');
+  err.textContent = '';
+  if(!f){ upPreview.className = 'up-preview empty'; upPreview.textContent = '预览区 · 先选图'; upFileName.textContent = '未选择文件'; return; }
+  upFileName.textContent = f.name;
+  if(f.size > 6*1024*1024){ err.textContent = '图片超过 6MB，换小一点的。'; upFileName.textContent = '未选择文件'; upPreview.className = 'up-preview empty'; upPreview.textContent = '预览区 · 先选图'; return; }
+  const rd = new FileReader();
+  rd.onload = () => {
+    upDataUrl = rd.result;
+    upPreview.className = 'up-preview';
+    upPreview.innerHTML = `<img src="${upDataUrl}" alt="预览">`;
+  };
+  rd.readAsDataURL(f);
+});
+
+document.getElementById('upSubmit').onclick = async () => {
+  const name = document.getElementById('upName').value.trim();
+  const tag = document.getElementById('upTag').value.trim();
+  const group = document.getElementById('upGroup').value;
+  const ds = document.getElementById('upDs').value.trim();
+  const err = document.getElementById('upErr');
+  err.textContent = '';
+  if(!upDataUrl){ err.textContent = '先选一张立绘。'; return; }
+  if(!name){ err.textContent = '给立绘起个名称。'; return; }
+  const btn = document.getElementById('upSubmit');
+  btn.disabled = true;
+  try{
+    const r = await fetch('/api/art', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name, tag, group, ds, dataUrl: upDataUrl})});
+    if(!r.ok){
+      if(r.status === 413) throw new Error('TOO_LARGE');
+      if(r.status === 401) throw new Error('UNAUTHORIZED');
+      throw new Error('HTTP ' + r.status);
+    }
+    const res = await r.json();
+    if(res.item) galleryItems.unshift(res.item);
+    artUploadDlg.close();
+    upFile.value = ''; upDataUrl = null;
+    upFileName.textContent = '未选择文件';
+    document.getElementById('upName').value = '';
+    document.getElementById('upTag').value = '';
+    document.getElementById('upDs').value = '';
+    upPreview.className = 'up-preview empty';
+    upPreview.textContent = '预览区 · 先选图';
+    buildGallery(); bindLightbox();
+  }catch(e){
+    if(e.message === 'TOO_LARGE') err.textContent = '图片太大被服务器拦截，请压缩或换更小的图（6MB内）。';
+    else if(e.message === 'UNAUTHORIZED') err.textContent = '登录已过期，请重新登录后再传。';
+    else err.textContent = '上传失败（' + e.message + '），请重试。';
+  }
+  finally{ btn.disabled = false; }
+};
 document.getElementById("trashClose").onclick = () => trashDlg.close();
 document.getElementById("restoreAll").onclick = restoreAll;
 document.getElementById("trashList").addEventListener("click", e => {
@@ -2628,7 +3066,7 @@ const MOON_SVG = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path 
 
 function coverArtHTML(){
   return '<div class="bk-art">'+
-    '<img src="assets/book-cover-art.webp" srcset="assets/book-cover-art-sm.webp 760w, assets/book-cover-art.webp 1200w" sizes="(max-width:760px) 100vw, 570px" alt="御姐捏着捣乱的萝莉的脸，少女在沙发上安静写手账">'+
+    '<img src="assets/cover/book-cover-art.webp" srcset="assets/cover/book-cover-art-sm.webp 760w, assets/cover/book-cover-art.webp 1200w" sizes="(max-width:760px) 100vw, 570px" alt="御姐捏着捣乱的萝莉的脸，少女在沙发上安静写手账">'+
     '<div class="shade"></div>'+
     '<span class="seal" aria-hidden="true">'+MOON_SVG+'</span>'+
     '<span class="cap">汐音的手账　·　2026</span>'+
@@ -2657,7 +3095,7 @@ function coverTitleHTML(){
 function coverBackHTML(){
   const m = BOOK.meta;
   return '<div class="bk-art back">'+
-    '<img src="assets/book-cover-back.webp" alt="萝莉撒了满屋纸页被御姐拎住，少女在沙发上安静写字">'+
+    '<img src="assets/cover/book-cover-back.webp" alt="萝莉撒了满屋纸页被御姐拎住，少女在沙发上安静写字">'+
     '<div class="shade"></div>'+
     '<div class="bc">'+
       '<div class="bc-k">ZHICHAO　·　汐音的手账</div>'+
@@ -3009,7 +3447,7 @@ function ckRender(line){
 
   const chibi = document.getElementById("ckChibi");
   if(chibi){
-    const want = st.checked ? "assets/chibi-love.png" : "assets/chibi-hi.webp";
+    const want = st.checked ? "assets/mascot/chibi/chibi-love.png" : "assets/mascot/chibi/chibi-hi.webp";
     if(chibi.dataset.want !== want){ chibi.dataset.want = want; chibi.src = want; }
   }
 
@@ -3382,14 +3820,19 @@ const chatFlip = document.getElementById("chatFlip");
 const chatFormLabel = document.getElementById("chatFormLabel");
 
 const FORM_KEY = "zhichao_chat_form";
+/* src = 夜间（哥特礼服）；day = 白天（原版浅色立绘），随 html[data-zc-theme] 切换 */
 const FORMS = [
-  { id:"mature", src:"assets/chat-xiyin.webp", label:"御姐形态 · 在线",
+  { id:"mature", src:"assets/chat/chat-xiyin.webp", day:"assets/chat/chat-xiyin-day.webp", label:"御姐形态 · 在线",
     persona:"你现在是成熟御姐：优雅自信、从容体贴，带一点含蓄的撩拨和温柔的调侃，会用成熟稳重的语气照顾主人，偶尔坏笑打趣，但把握分寸。" },
-  { id:"loli", src:"assets/chat-xiyin-girl.webp", label:"萝莉形态 · 在线",
+  { id:"loli", src:"assets/chat/chat-xiyin-girl.webp", day:"assets/chat/chat-xiyin-day-girl.webp", label:"萝莉形态 · 在线",
     persona:"你现在是元气萝莉：天真活泼、爱撒娇，说话俏皮跳跃，像个黏人的小妹妹，喜欢用可爱的语气词，情绪外放、古灵精怪。" },
-  { id:"cute", src:"assets/chat-xiyin-cute.webp", label:"少女形态 · 在线",
+  { id:"cute", src:"assets/chat/chat-xiyin-cute.webp", day:"assets/chat/chat-xiyin-day-cute.webp", label:"少女形态 · 在线",
     persona:"你现在是清纯少女：软甜娇羞、善解人意，说话轻声细语、温柔甜美，像青梅竹马，会害羞地关心主人、默默陪伴。" }
 ];
+function formSrc(f){
+  const dark = document.documentElement.getAttribute("data-zc-theme") === "dark";
+  return dark ? f.src : (f.day || f.src);
+}
 let formIndex = 0;
 const savedIdx = FORMS.findIndex(f => f.id === localStorage.getItem(FORM_KEY));
 if (savedIdx >= 0) formIndex = savedIdx;
@@ -3399,12 +3842,27 @@ const faceB = document.getElementById("faceB");
 let showingA = true;
 let flipping = false;
 function initForm(){
-  faceA.src = FORMS[formIndex].src;
-  faceB.src = FORMS[formIndex].src;
+  const s = formSrc(FORMS[formIndex]);
+  faceA.src = s;
+  faceB.src = s;
   chatFlip.classList.remove("flipped");
   showingA = true;
   chatFormLabel.textContent = FORMS[formIndex].label;
 }
+/* 主题切换时即时换装：白天用原版浅色立绘，夜间用哥特礼服（不重建 DOM，只改 src） */
+(function watchFormTheme(){
+  const html = document.documentElement;
+  let lastTheme = html.getAttribute("data-zc-theme");
+  new MutationObserver(() => {
+    const now = html.getAttribute("data-zc-theme");
+    if (now === lastTheme) return;
+    lastTheme = now;
+    const overlay = document.getElementById("chatOverlay");
+    if (!chatAssetsReady || !overlay || overlay.hidden) return;
+    const s = formSrc(FORMS[formIndex]);
+    if (faceA.getAttribute("src") !== s) { faceA.src = s; faceB.src = s; }
+  }).observe(html, { attributes: true, attributeFilter: ["data-zc-theme"] });
+})();
 // 三形态切换配音：每个形态一个音频池，随机播放且不连续重复同一句
 const VOICE_POOL = {
   mature: [1,2,3,4,5,6].map(n => "assets/voice/mature-" + n + ".wav"),
@@ -3420,10 +3878,10 @@ let chatAssetsReady = false;
 function initChatAssets(){
   if(chatAssetsReady) return;
   chatAssetsReady = true;
-  // 预加载三套立绘，保证翻转时从缓存即时显示
-  FORMS.forEach(f => { const p = new Image(); p.src = f.src; });
+  // 预加载两套立绘（白天原版 / 夜间哥特），保证翻转与换主题时从缓存即时显示
+  FORMS.forEach(f => { const p = new Image(); p.src = f.src; if (f.day) { const q = new Image(); q.src = f.day; } });
   // 群聊生活场景图也预加载，切群聊时不闪空
-  const gs = new Image(); gs.src = "assets/group-xiyin-home.webp";
+  const gs = new Image(); gs.src = "assets/mascot/scene/group-xiyin-home.webp";
   initForm();
   // 预加载全部配音，保证切换时即时播放
   Object.values(VOICE_POOL).flat().forEach(src => { const a = new Audio(); a.preload = "auto"; a.src = src; });
@@ -3460,7 +3918,7 @@ chatFlip.addEventListener("click", () => {
   }
   const next = (formIndex + 1) % FORMS.length;
   const hiddenFace = showingA ? faceB : faceA;
-  hiddenFace.src = FORMS[next].src;
+  hiddenFace.src = formSrc(FORMS[next]);
   flipping = true;
   chatFlip.classList.toggle("flipped");
   showingA = !showingA;
@@ -3476,9 +3934,9 @@ chatFlip.addEventListener("click", () => {
 
 const GROUP_ID = "group";
 const GROUP_ROLES = {
-  mature: { name: "大姐姐", av: "assets/chat-xiyin.webp" },
-  cute:   { name: "老二",   av: "assets/chat-xiyin-cute.webp" },
-  loli:   { name: "老三",   av: "assets/chat-xiyin-girl.webp" }
+  mature: { name: "大姐姐", av: "assets/chat/chat-xiyin.webp" },
+  cute:   { name: "老二",   av: "assets/chat/chat-xiyin-cute.webp" },
+  loli:   { name: "老三",   av: "assets/chat/chat-xiyin-girl.webp" }
 };
 const MODE_KEY = "zhichao_chat_mode";
 let chatMode = "single";
@@ -3691,7 +4149,7 @@ function addMessage(role, content, formId, name, at){
   if (role === "bot"){
     const av = document.createElement("img");
     const form = FORMS.find(f => f.id === formId) || FORMS[formIndex];
-    av.className = "msg-ava"; av.src = form.src; av.alt = "";
+    av.className = "msg-ava"; av.src = formSrc(form); av.alt = "";
     row.appendChild(av);
   }
   const bub = document.createElement("div");
