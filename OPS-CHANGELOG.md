@@ -1069,6 +1069,14 @@
 - **并行工作线提示**：同期云电脑工作区里有未跟踪的 `backend/`、`assets-source/cover/`、`cloud/assets/cover/book-cover.webp`、`dev/shot-*.png`、`dev/verify-art.cjs`、`live2d-sync-20261115.zip`，属于另一条正在进行的开发线。本次发布未提交、未删除、未改动它们，仍原样留在云电脑工作区。
 - **后续纪律**：多条线共用一个工作副本时，动手前先 `git add/commit`，否则 `git pull` 会因脏工作区被拒；同一时刻只允许一条线修改 `cloud/`，其余线只增不改。
 
+## 2026-11-19 16:05（Asia/Shanghai）｜清理云电脑工作区残留（非本项目产物）
+
+- **起因**：发布时 `git pull` 被脏工作区挡住，排查出一套未跟踪文件，经确认非本人产物（另一条线遗留）。
+- **范围**：`backend/`（`server.py`、`nginx-default.conf` 及 `.bak`、`__pycache__`）、`assets-source/cover/`（26 MB 封面源图）、`cloud/assets/cover/book-cover.webp`、`dev/shot-*.png`（11 张调试截图）、`dev/verify-art.cjs`、`live2d-sync-20261115.zip`，合计约 47 MB。
+- **做法**：`git clean -fd`，刻意不加 `-x`，确保 `.env`、`.data/`、`cloud/data/`、`backups/` 等被忽略文件一个不动。
+- **结果**：云电脑工作区 `git status` 无输出，HEAD 与远端一致；`assets-source/`、`backend/`、`backups/` 三个目录因仍含忽略文件而保留，内容无改动。
+- **边界**：只删未跟踪文件；线上 `/opt/zhichao/assets/cover/` 下此前被 rsync 带上去的一张封面图未做删除（rsync 未带 `--delete`），属孤儿文件，暂留不影响访问，需要时可单独清理。
+
 
 
 
