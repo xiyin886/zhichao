@@ -1085,6 +1085,16 @@
 - **边界**：纯文档，未改代码、未改站点、未动素材。按「仅网站相关改动才写站点 changelog」的口径，本次只在 OPS 记录，`changelog.json` 不新增条目。
 - **待定**：`design/汐音-服装设计规范.md` 仍在 `design/` 根目录，按交付清单目录职责应归入 `spec/`，是否移动待确认。
 
+## 2026-11-19 16:45（Asia/Shanghai）｜design 素材撤出 git，改为本地私有区
+
+- **变更类型**：结构 / 工作流规则变更。
+- **起因**：`design/` 是用户自己的立绘设计区，不应进版本库；代码需要素材时应从 design 取用并转 webp，而不是让仓库同时背着设计稿和发布稿两份图。
+- **做法**：`git rm -r --cached design/art design/audio design/video`（撤出 47 项索引），磁盘 45 个文件原样保留；`.gitignore` 新增 `3c` 段排除这三个目录；`git add -f` 明令禁止。
+- **文档同步**：`docs/CONTRACTS.md` 第二节由「单向复制」改写为「`design/` 不入库，开发按需取用 + 转 webp 落 `cloud/assets/`」；`HANDOVER…md` A2 通道表把 `design/` 从代码通道移出并加独立说明；`design/交付清单.md` 第四节、`design/art/README.md` 同步改写。
+- **仍入库的部分**：`design/spec/汐音-角色设定.md`、`design/交付清单.md`、`design/汐音-服装设计规范.md` —— 纯文字契约，便于交接，体积可忽略。
+- **历史遗留（未处理，待确认）**：43 张立绘仍在历史提交 `b242c9d` 中，`git rm --cached` 只影响 HEAD 之后，gitee 仓库里仍留有这两个多 MB。要彻底清除需重写历史并强推，属破坏性操作，未执行。
+- **站点日志**：不影响线上表现，按口径不写 `changelog.json`。
+
 
 
 

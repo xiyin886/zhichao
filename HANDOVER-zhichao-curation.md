@@ -228,10 +228,11 @@ node scripts/push-lighthouse.ts
 
 | 通道 | 内容 | 做法 |
 |---|---|---|
-| **代码** | `cloud/`（除下述数据文件）、`server/`、`docs/`、`design/`、`dev/` | 本地 commit → `git push origin main`（gitee `zhang-suger/AIHOT`）→ 云电脑 `/home/user/zhichao` `git pull` → 云电脑 `rsync` 下发服务器 |
+| **代码** | `cloud/`（除下述数据文件）、`server/`、`docs/`、`dev/` | 本地 commit → `git push origin main`（gitee `zhang-suger/AIHOT`）→ 云电脑 `/home/user/zhichao` `git pull` → 云电脑 `rsync` 下发服务器 |
 | **数据** | `cloud/data/current.json`、`changelog.json` 及各自 `.gz` | 云电脑定时任务「知潮每日策展」（`7 */2 * * *`）产出 → `node scripts/push-lighthouse.ts` → scp 直推 `/opt/zhichao/data/`。**永不经过 git** |
 | **上传** | 用户立绘图 | 落容器 `/data/art/`，不进 git、不进静态目录 |
 
+- **`design/` 不入库**：立绘私有区，只在本机。`.gitignore` 的 `3c` 段排除 `design/art/`、`design/audio/`、`design/video/`；代码需要素材时由开发从 design 取用、裁剪并**转成 webp** 后放进 `cloud/assets/`，再随代码发布。线上没有 `design/` 目录，代码不得引用它。
 - **服务器不建 git 仓库**：`/opt/zhichao` 是站点根，对应仓库里 `cloud/` 这一层，层级不匹配，只能由云电脑 rsync 下发；不要照搬云电脑那套 `reset --hard`。
 - **四个数据文件已被 `.gitignore`（`3a` 段）排除**，`git pull` / `reset --hard` / `rsync`（带 `--exclude data`）都不会碰它们；`music.json` 仍入库，属静态配置。
 - 云电脑与服务器上的 `data/`、`art/`、`self-upload/` 是数据真源，任何代码同步都必须显式排除。

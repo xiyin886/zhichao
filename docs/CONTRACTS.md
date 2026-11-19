@@ -12,14 +12,17 @@
 
 设计侧**不写代码、不跑预览、不做部署**；开发侧**不改设计源文件**。
 
-## 二、单向流动（不许反向）
+## 二、素材取用（`design/` 不入库）
 
 ```
-design/  ──复制──▶  cloud/assets/  ──部署──▶  服务器
+design/（只在本机，不进 git）── 按需取用 + 转 webp ──▶ cloud/assets/ ── 部署 ──▶ 服务器
 ```
 
-- `design/` 是唯一素材源，`cloud/assets/` 只是发布产物。
-- **禁止**从 `cloud/assets/` 反向覆盖 `design/`，也禁止在 `cloud/assets/` 里直接改图（会与设计源漂移）。
+- `design/` 是设计源，**只存在于本机**。`.gitignore` 的 `3c` 段已排除 `design/art/`、`design/audio/`、`design/video/`，不要用 `git add -f` 强行入库。
+- 开发侧需要素材时**主动从 design 取**，按页面用途裁剪并**转成 webp** 再放 `cloud/assets/`：立绘、贴纸、表情、场景、分层件统一 webp（透明通道保留）；视频、音频照原格式。
+- 转格式与裁剪是**落地工序，由开发做**；设计师只交付原始设计稿，不负责压 webp、不负责改路径。
+- **禁止反向**：不得从 `cloud/assets/` 覆盖 `design/`，也不得在 `cloud/assets/` 里直接改图（会与设计源漂移）。
+- 代码里引用的永远是 `cloud/assets/` 下的 webp，禁止直接引用 `design/` 路径（线上没有这个目录）。
 
 ## 三、数据文件铁律（最容易出事的地方）
 

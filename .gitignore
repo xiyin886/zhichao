@@ -33,6 +33,12 @@ cloud/data/changelog.json.gz
 cloud/assets/self-upload/*
 !cloud/assets/self-upload/README.md
 
+# 3c. design/ 立绘私有区：素材（图/音/视频）不入库，留在本机
+#     代码需要时从 design 取用，转成 webp 后放进 cloud/assets/ 再发布
+design/art/
+design/audio/
+design/video/
+
 # ---------- 4. Python 缓存 ----------
 __pycache__/
 *.pyc
