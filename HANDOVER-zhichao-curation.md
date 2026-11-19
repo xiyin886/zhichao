@@ -218,12 +218,13 @@
 - 本机权威副本：`server/server-live.py`（线上 800 行，`f5b71a2c…`）、`server/default-live.conf`（线上 207 行，`56ac9c2f…`）；旧 `server.py`/`default.conf` 仅留档、不作权威。
 - 备份目录 `/opt/zhichao-backups/<stamp>/`，任何文件改前先备份。
 
-### B. 前端组件设计（均内联 `index.html`，无独立 js/css）
+### B. 前端组件设计（主逻辑 `js/app.js`、样式 `styles/inline.css`，禁止再内联）
 - 四个原生 `<dialog>`：`#artDlg`（9 秒 CG + Swiper coverflow 卡组 + 查看全部）、`#artDetailDlg`（单卡大图 + 职责 tag + 服装设定）、`#artGalleryDlg`（六套立绘网格，GLightbox 全屏）、`#artUploadDlg`（上传表单）。
 - 开源库落 `vendor/` 本地、不依赖公网 CDN、随 git 提交：Swiper 11.2.6（coverflow）、GLightbox 3.3.0（灯箱）；`/vendor` 受 `auth_request` 保护，匿名 401。
 - 自定义上传控件：隐藏原生 `input[type=file]`，`#upPickBtn` 触发 `click()`、`#upFileName` 显示文件名；错误按 413/401/其他分类提示。
 - 立绘 `object-fit:contain` 保全身不裁（旧 `cover` 裁头顶裙摆）。
 - 组件坑：① dialog 的 top-layer 盖普通 fixed 灯箱，先 `close()` 延迟 90ms 再 `openAt`，关闭回调 `showModal` 恢复；② GLightbox 用 `openAt(idx)` 非 `open`，selector 空则无 slides；③ Swiper `loop` 克隆 DOM，数据一律读固定 `ART_SET` 数组；④ 灯箱重建前先 `destroy()` 旧实例。
+- **资源外链现状（2026-11-19 起）**：原内联样式 78.7 KB → `styles/inline.css`（头部 `preload` 提前请求），原内联脚本 133.3 KB → `js/app.js`（`defer` 加载，执行顺序在 `settings.js`/`mascot.js`/`clock.js` 之前）；`index.html` 由 4667 行/244 KB 降到 476 行/27 KB。**新功能一律写进独立 css/js 文件，禁止再往 `index.html` 写内联 `<style>`/`<script>`**；改动任一文件都要重生成同名 `.gz` 并递增 `?v=` 版本号。
 
 ### C. 标准工作流（闭环）
 改源 → 本地预览校验 → 记 md5 → 服务器备份 → scp 上传（不丢散件）→ 文本文件重生成 `.gz`（`gzip_static`）→ nginx 改则 `nginx -t` 后 reload、后端改才 restart 对应容器 → 线上回归（md5 逐项一致、首页 200、匿名受保护资源仍 401、专项验证）→ 写 changelog（权威在 `/data`）+ OPS，日志是线上文件则再部署一次。

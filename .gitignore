@@ -9,6 +9,10 @@
 .data/
 .workbuddy/
 
+# ---------- 1b. 本机密钥（绝不入库） ----------
+.env
+.env.local
+
 # ---------- 2. 备份与历史归档（本地同步备份、旧版素材、Live2D 工程） ----------
 backups/
 live2d/
@@ -18,6 +22,12 @@ cloud/assets/_archive/
 
 # ---------- 3. 大体积媒体：形象页视频等单独 scp 部署，不入库 ----------
 cloud/assets/art/
+
+# 3a. 热点数据：由云电脑「知潮每日策展」定时任务产出并 scp 直推服务器，绝不入库
+cloud/data/current.json
+cloud/data/current.json.gz
+cloud/data/changelog.json
+cloud/data/changelog.json.gz
 
 # 3b. 上传立绘占位目录 self-upload：只保留 README，图片实际在服务器 /data/art/，不入库
 cloud/assets/self-upload/*

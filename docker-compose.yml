@@ -1,0 +1,43 @@
+# 知潮本地环境：与线上同一份 server-live.py、同一份 nginx 配置，只换挂载路径。
+#
+#   docker compose up -d          起站（需要 .env 里有 MOONSHOT_KEY）
+#   docker compose logs -f        看日志
+#   docker compose down           停
+#
+# 站点 http://127.0.0.1:8811/   本地口令 zhichao
+
+name: zhichao-local
+
+services:
+  zhichao-memory:
+    image: python:3.12-alpine
+    container_name: zhichao-memory-local
+    working_dir: /app
+    command: ["python", "-u", "/app/server-live.py"]
+    environment:
+      MEMORY_DIR: /data
+      MEMORY_TOKEN: local
+      ACCESS_SALT: ${ACCESS_SALT:-zhichao-local}
+      ACCESS_HASH: ${ACCESS_HASH}
+      SESSION_SECRET: ${SESSION_SECRET}
+      MOONSHOT_KEY: ${MOONSHOT_KEY}
+      SITE_FILE: /site/data/current.json
+      CHANGELOG_FILE: /data/changelog.json
+      CHANGELOG_FALLBACK: /site/data/changelog.json
+      GALLERY_FILE: /data/gallery.json
+      PORT: "8080"
+    volumes:
+      - ./server:/app:ro
+      - ./.data:/data
+      - ./cloud:/site:ro
+
+  zhichao-web:
+    image: nginx:1.27-alpine
+    container_name: zhichao-web-local
+    ports:
+      - "8811:80"
+    volumes:
+      - ./cloud:/usr/share/nginx/html:ro
+      - ./server/default-live.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - zhichao-memory
