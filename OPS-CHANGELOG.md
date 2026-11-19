@@ -1043,6 +1043,14 @@
 - **验证**：assets 下 6 个关键文件 `mascot/pose/mascot-hot.webp`、`mascot/sticker/sticker-edu.webp`、`emo/emo-dizzy.webp` 等路径均存在；全仓库不再有裸 `.webp` 引用（除 `emptyHTML` 入参）。
 - **边界**：未改 `cloud/assets` 文件本身，未改 nginx 与后端。
 
+## 2026-11-19 15:30（Asia/Shanghai）｜补录站点更新日志（漏记整改）
+
+- **问题**：13:26 之后的四项变更只写进了本文件，站点 `changelog.json` 一条没写，网页「更新日志」停在 11-18 12:41。11-19 原本只有上午形象页那 5 条（09:50～11:50）在册，下午全部缺记。这是本文件与站点日志脱节，属执行漏洞。
+- **整改**：从容器权威副本 `/opt/zhichao-memory/data/changelog.json` 拉取 → 追加 4 条（13:26 页面拆分 / 14:20 发布通道 / 14:55 素材归档 / 15:10 修复图片 404）→ 写回容器权威与站点备份两份，中途不改动任何已有条目的 `important` 标记。
+- **结果**：132 → 136 条，`updatedAt` = `2026-11-19T15:30:00+08:00`，两份 md5 均为 `dedc81045cf925ae4f12c98ee00ffa15`，8 个 `important` 标记保留。
+- **验证**：容器内 `/data/changelog.json` 读到 136 条；本地 `cloud/data/changelog.json` 同步为同版本。后端 `/changelog` 每次请求实时读文件（`read_changelog()`），写入即生效，无需重启 `zhichao-memory`。
+- **机制固化**：此后每次改动，`OPS-CHANGELOG.md` 与站点 `changelog.json` 必须同时写，漏写即视为任务未完成。`changelog.json` 仍走数据通道（不入 git），部署前必须先拉取合并再追加。
+
 
 
 
