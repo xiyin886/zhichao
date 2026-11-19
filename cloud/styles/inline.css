@@ -974,7 +974,7 @@ html[data-zc-theme="dark"] .rdr-del:hover{color:#f2bcc5;border-color:rgba(242,18
 .chat-side-spark{position:absolute;inset:0;background:radial-gradient(circle at 50% 28%,rgba(255,255,255,.55),transparent 62%)}
 /* 群聊专属：生活场景群像（夜晚客厅，三人各自在手边做事） */
 .chat-scene{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .35s ease;
-  background:url("assets/mascot/scene/group-xiyin-home.webp") center 44%/contain no-repeat}
+  background:url("../assets/mascot/scene/group-xiyin-home.webp") center 44%/contain no-repeat}
 .chat-side.group-mode .chat-scene{opacity:1}
 .chat-side.group-mode .chat-flip,.chat-side.group-mode .chat-flip-hint{display:none}
 .chat-side.group-mode .chat-idplate{background:linear-gradient(180deg,transparent 2%,rgba(255,249,251,.94))}

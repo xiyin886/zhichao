@@ -1051,6 +1051,15 @@
 - **验证**：容器内 `/data/changelog.json` 读到 136 条；本地 `cloud/data/changelog.json` 同步为同版本。后端 `/changelog` 每次请求实时读文件（`read_changelog()`），写入即生效，无需重启 `zhichao-memory`。
 - **机制固化**：此后每次改动，`OPS-CHANGELOG.md` 与站点 `changelog.json` 必须同时写，漏写即视为任务未完成。`changelog.json` 仍走数据通道（不入 git），部署前必须先拉取合并再追加。
 
+## 2026-11-19 15:45（Asia/Shanghai）｜修复拆分后 CSS 相对路径导致形象页背景图 404
+
+- **现象**：线上控制台 `GET /styles/assets/mascot/scene/group-xiyin-home.webp 404`，来源 `inline.css?v=20261119c:1`。
+- **根因**：这条背景图原来是内联在 `index.html` 里的，`url("assets/...")` 相对文档根解析，正好指向 `/assets/...`。拆成独立样式表后 CSS 位于 `/styles/inline.css`，同一句相对路径就变成 `/styles/assets/...`，多出一层 `styles/`。属于拆分的遗留副作用，与上一次 `app.js` 的裸文件名问题同源但成因不同。
+- **修法**：该处改为 `url("../assets/mascot/scene/group-xiyin-home.webp")`。全表只有这一处指向外部文件，其余 `url()` 均为内联 data URI，不涉及路径。
+- **版本**：`styles/inline.css?v=20261119c` → `?v=20261119e`，重生成 `inline.css.gz`（18160 B）与 `index.html.gz`（7832 B）。
+- **验证**：CSS 内 `../assets/` 生效、index 引用同步为 `v=20261119e`；线上该图路径存在。
+- **边界**：只改这一行，未动样式规则与布局。
+
 
 
 
