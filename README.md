@@ -5,7 +5,7 @@
 <p>按兴趣分方向，只留值得看的。<br>
 每小时由汐音替你翻一遍，核实过来源才记进手账。</p>
 <p><code>二次元</code>　<code>私享</code>　<code>每小时翻检</code>　<code>没有广告</code></p>
-<img src="cloud/assets/mascot.webp" width="400" alt="汐音趴在桌上托着腮，安静地看向这边">
+<img src="docs/readme/mascot.webp" width="400" alt="汐音趴在桌上托着腮，安静地看向这边">
 </div>
 
 > 大多数资讯产品都在想办法让你多待一会儿。
