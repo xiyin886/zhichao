@@ -21,8 +21,8 @@ async function loadDeps() {
 }
 
 const MODEL_URL = 'assets/3d/xiyin-walk.glb';
-const STAGE_W = 236;
-const STAGE_H = 262;
+const STAGE_W = 172;
+const STAGE_H = 191;
 const MIN_WIDTH = 901;      // 与 CSS 断点一致：窄屏只留静态立绘
 
 const PATROL_X = 0.24;      // 巡游半幅（世界单位，角色高 1.0）
@@ -149,7 +149,7 @@ function build(v) {
 
   /* 描边：同几何、同骨架的反壳，顶点在屏幕空间沿（蒙皮后的）法线外扩固定像素 */
   const olRes = { value: new THREE.Vector2(STAGE_W, STAGE_H).multiplyScalar(renderer.getPixelRatio()) };
-  const olPx = { value: 1.7 * renderer.getPixelRatio() };
+  const olPx = { value: 1.4 * renderer.getPixelRatio() };
   const outlineMat = toon.clone();
   outlineMat.map = null;
   outlineMat.gradientMap = null;
