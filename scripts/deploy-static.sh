@@ -34,9 +34,17 @@ echo "  仓库 $REPO_ROOT"
 echo "  目标 ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_DIR}（分支 ${BRANCH}）"
 
 step "1/6 拉取源码（只拉源码，.gz 不在仓库里）"
+SELF="$0"
+SELF_SUM_BEFORE=$(md5sum "$SELF" | cut -d' ' -f1)
 git fetch -q origin "$BRANCH"
 git merge --ff-only "origin/$BRANCH"
 git log --oneline -1
+# bash 边读边执行脚本：若本次 pull 恰好改了这个脚本自己，后续逻辑会用半新半旧的代码跑
+SELF_SUM_AFTER=$(md5sum "$SELF" | cut -d' ' -f1)
+if [ "$SELF_SUM_BEFORE" != "$SELF_SUM_AFTER" ] && [ -z "${DEPLOY_REEXEC:-}" ]; then
+  echo "  本脚本自身在本次 pull 中被更新 → 重新执行自身以使用新版本"
+  DEPLOY_REEXEC=1 exec bash "$SELF" "$@"
+fi
 
 step "1.5/6 nginx 配置漂移检查（只告警，绝不自动覆盖远端）"
 LOCAL_CONF="server/default-live.conf"
