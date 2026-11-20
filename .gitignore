@@ -9,6 +9,11 @@
 .data/
 .workbuddy/
 
+# 1a. 本机工具链 / 排障手记：只在本机维护，绝不入库
+HANDOVER-local-toolchain.md
+# 1b. 交接文档整体不入库（内容含本机路径与本机环境细节）
+HANDOVER-*.md
+
 # ---------- 1b. 本机密钥（绝不入库） ----------
 .env
 .env.local
@@ -35,9 +40,7 @@ cloud/assets/self-upload/*
 
 # 3c. design/ 立绘私有区：素材（图/音/视频）不入库，留在本机
 #     代码需要时从 design 取用，转成 webp 后放进 cloud/assets/ 再发布
-design/art/
-design/audio/
-design/video/
+design/
 
 # ---------- 4. Python 缓存 ----------
 __pycache__/
@@ -61,3 +64,8 @@ build/
 Thumbs.db
 desktop.ini
 *~
+design
+design
+/design/*.glb
+/OPS-CHANGELOG.md
+/README.preview.html

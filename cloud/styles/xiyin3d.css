@@ -1,0 +1,60 @@
+/* ============ 汐音 3D 巡游看板（首屏小尺寸锚点） ============
+   角色：design/video/retargeted_animations.glb → cloud/assets/3d/xiyin-walk.glb
+   观感：MeshToon 平涂 + 屏幕空间描边 + 沿月牙轨道来回巡游 + 视线跟随鼠标
+   只在 ≥901px 且登录后出现；加载失败/无 WebGL 时保持原静态立绘 */
+
+.mascot3d{
+  position:absolute;right:24px;top:-8px;width:236px;height:262px;z-index:21;
+  pointer-events:none;opacity:0;transition:opacity .45s ease;
+}
+.mascot3d.is-on{opacity:1}
+.mascot3d canvas{position:relative;display:block;width:100%;height:100%;z-index:2;
+  filter:saturate(1.06) contrast(1.02)}
+
+/* 背后的月晕：莫兰迪粉低饱和，和站点主色一致 */
+.m3d-glow{
+  position:absolute;left:50%;top:42%;width:200px;height:200px;transform:translate(-50%,-50%);z-index:0;
+  border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle at 50% 50%,
+    rgba(255,245,250,.94),
+    rgba(244,224,236,.40) 44%,
+    rgba(244,224,236,0) 70%);
+  filter:blur(2px);
+}
+/* 脚下的轨道弧线 + 接触阴影（随巡游位置左右滑动） */
+.m3d-ring{
+  position:absolute;left:50%;bottom:14px;width:172px;height:40px;transform:translateX(-50%);z-index:1;
+  border-radius:50%;pointer-events:none;
+  border-bottom:1px solid rgba(173,127,143,.40);
+}
+.m3d-shadow{
+  position:absolute;left:50%;bottom:18px;width:104px;height:20px;margin-left:-52px;z-index:1;pointer-events:none;
+  border-radius:50%;
+  background:radial-gradient(ellipse at 50% 50%,rgba(104,72,92,.30),rgba(104,72,92,0) 70%);
+  transform:translateX(var(--sx,0px));
+  transition:transform .12s linear;
+}
+
+/* 夜间（哥特）主题：换成冷紫月光 */
+html[data-zc-theme="dark"] .m3d-glow{
+  background:radial-gradient(circle at 50% 50%,
+    rgba(214,200,255,.34),
+    rgba(146,126,188,.14) 46%,
+    rgba(146,126,188,0) 74%);
+  filter:blur(6px);
+}
+html[data-zc-theme="dark"] .m3d-ring{border-bottom-color:rgba(184,168,216,.42)}
+html[data-zc-theme="dark"] .m3d-shadow{
+  background:radial-gradient(ellipse at 50% 50%,rgba(16,12,24,.44),rgba(16,12,24,0) 70%);
+}
+
+/* 3D 生效时淡出静态立绘，避免两层叠影 */
+.zc-3d-on .mascot{opacity:0;transition:opacity .35s ease}
+
+/* 窄屏（≤900px）静态立绘切到左上小图，3D 舞台直接不出现 */
+@media (max-width:900px){
+  .mascot3d{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .mascot3d,.m3d-shadow{transition:none}
+}
