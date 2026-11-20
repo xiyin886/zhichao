@@ -5,11 +5,23 @@
 
 .mascot3d{
   position:absolute;right:26px;top:-4px;width:172px;height:191px;z-index:21;
-  pointer-events:none;opacity:0;transition:opacity .45s ease;
+  pointer-events:none;opacity:0;transition:opacity .2s ease;
 }
+.mascot3d.is-loading{opacity:1}          /* 加载中：先亮月晕/轨道，静态立绘已让位 */
 .mascot3d.is-on{opacity:1}
 .mascot3d canvas{position:relative;display:block;width:100%;height:100%;z-index:2;
+  opacity:0;transition:opacity .35s ease;   /* 首帧渲完再淡入，避免亮起时的空场景 */
   filter:saturate(1.06) contrast(1.02)}
+.mascot3d.is-on canvas{opacity:1}
+
+/* 加载中：月晕与轨道做一次很轻的呼吸，暗示「在途」而不是卡住 */
+.mascot3d.is-loading:not(.is-on) .m3d-ring{animation:m3d-breathe 1.6s ease-in-out infinite}
+.mascot3d.is-loading:not(.is-on) .m3d-glow{animation:m3d-pulse 1.6s ease-in-out infinite}
+@keyframes m3d-breathe{0%,100%{opacity:.5}50%{opacity:1}}
+@keyframes m3d-pulse{
+  0%,100%{transform:translate(-50%,-50%) scale(.94);opacity:.82}
+  50%{transform:translate(-50%,-50%) scale(1.05);opacity:1}
+}
 
 /* 背后的月晕：莫兰迪粉低饱和，和站点主色一致 */
 .m3d-glow{
@@ -48,8 +60,9 @@ html[data-zc-theme="dark"] .m3d-shadow{
   background:radial-gradient(ellipse at 50% 50%,rgba(16,12,24,.44),rgba(16,12,24,0) 70%);
 }
 
-/* 3D 生效时淡出静态立绘，避免两层叠影 */
-.zc-3d-on .mascot{opacity:0;transition:opacity .35s ease}
+/* 3D 生效时淡出静态立绘，避免两层叠影；加载中就先让位，避免「先立绘后 3D」的跳变 */
+.zc-3d-pending .mascot,
+.zc-3d-on .mascot{opacity:0;transition:opacity .25s ease}
 
 /* 窄屏（≤900px）静态立绘切到左上小图，3D 舞台直接不出现 */
 @media (max-width:900px){

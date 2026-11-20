@@ -5,22 +5,25 @@
  *
  * 注意：/vendor/ 在线上是走 auth_request 的受保护目录，所以 three.js 相关依赖
  * 只能「登录后动态 import」，不能写成文件顶部的静态 import，否则登录页阶段就 401。
+ *
+ * 2026-11-20 体验优化：
+ *   ① 三个依赖 + GLB 二进制全部并发拉取（原来是一条串一条，白等三轮 RTT）
+ *   ② 加载中先亮月晕/轨道、静态立绘立即让位，避免「先立绘后 3D」的跳变
+ *   ③ 失败自动重试一次；总超时 12s；WebGL 上下文丢失也回落静态立绘
  */
 
 let THREE = null;
 let GLTFLoader = null;
 let MeshoptDecoder = null;
+let depsPromise = null;
+let modelPromise = null;
 
-async function loadDeps() {
-  if (THREE) return;
-  THREE = await import('../vendor/three.module.min.js');
-  const loaderMod = await import('../vendor/three/GLTFLoader.js');
-  GLTFLoader = loaderMod.GLTFLoader;
-  const meshoptMod = await import('../vendor/three/meshopt_decoder.module.js');
-  MeshoptDecoder = meshoptMod.MeshoptDecoder;
-}
+const DIR = 'assets/3d/';
+const MODEL_URL = DIR + 'xiyin-walk.glb';
+const BOOT_TIMEOUT = 12000;   // 依赖 + 模型的总超时
+const MAX_TRY = 2;            // 首次 + 重试一次
+const RETRY_DELAY = 500;
 
-const MODEL_URL = 'assets/3d/xiyin-walk.glb';
 const STAGE_W = 172;
 const STAGE_H = 191;
 const MIN_WIDTH = 901;      // 与 CSS 断点一致：窄屏只留静态立绘
@@ -38,6 +41,7 @@ let booting = false;
 let scheduled = 0;
 
 const isNight = () => document.documentElement.getAttribute('data-zc-theme') === 'dark';
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const PALETTE = {
   day: {
@@ -59,6 +63,45 @@ function hasWebGL() {
   } catch (e) {
     return false;
   }
+}
+
+/* 能跑 3D 的前提：够宽、有 WebGL、没开「减弱动效」 */
+function canRun() {
+  return window.innerWidth >= MIN_WIDTH && hasWebGL() && !REDUCED.matches;
+}
+
+/* 依赖三件套并发（原来串行 await，等于白等两轮 RTT） */
+function loadDeps() {
+  if (THREE) return Promise.resolve();
+  if (!depsPromise) {
+    depsPromise = Promise.all([
+      import('../vendor/three.module.min.js'),
+      import('../vendor/three/GLTFLoader.js'),
+      import('../vendor/three/meshopt_decoder.module.js'),
+    ]).then(([threeMod, loaderMod, meshoptMod]) => {
+      THREE = threeMod;
+      GLTFLoader = loaderMod.GLTFLoader;
+      MeshoptDecoder = meshoptMod.MeshoptDecoder;
+    }).catch((err) => { depsPromise = null; throw err; });
+  }
+  return depsPromise;
+}
+
+/* GLB 二进制：与依赖同时开跑，失败后重试可复用浏览器缓存 */
+function fetchModel() {
+  if (!modelPromise) {
+    modelPromise = fetch(MODEL_URL, { credentials: 'same-origin' }).then((res) => {
+      if (!res.ok) throw new Error('GLB HTTP ' + res.status);
+      return res.arrayBuffer();
+    }).catch((err) => { modelPromise = null; throw err; });
+  }
+  return modelPromise;
+}
+
+function withTimeout(p, ms, label) {
+  let timer;
+  const guard = new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(label)), ms); });
+  return Promise.race([p, guard]).finally(() => clearTimeout(timer));
 }
 
 /* 4 阶色阶：二次元平涂的明暗断层 */
@@ -114,6 +157,13 @@ function build(v) {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.setSize(STAGE_W, STAGE_H, false);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+  // 上下文丢失（切换显卡、显存吃紧、驱动重置）→ 回落静态立绘，别静默留个白框
+  canvas.addEventListener('webglcontextlost', (e) => {
+    e.preventDefault();
+    console.warn('[xiyin3d] WebGL 上下文丢失，回落到静态立绘');
+    try { teardown(); } catch (_) {}
+  }, { once: true });
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(28, STAGE_W / STAGE_H, 0.05, 40);
@@ -298,31 +348,63 @@ window.addEventListener('pointermove', onPointer, { passive: true });
 document.addEventListener('pointerleave', onPointerOut);
 
 /* ---------- 生命周期 ---------- */
+
+/* 加载中：先亮月晕/轨道/投影，静态立绘让位 —— 视觉锚点立刻在位，但不会「先看到立绘再啪一下换成 3D」 */
+function setPending(on) {
+  const app = document.getElementById('app');
+  const host = document.getElementById('mascot3d');
+  if (!app || !host) return;
+  if (on) {
+    app.classList.add('zc-3d-pending');
+    host.hidden = false;
+    host.classList.add('is-loading');
+  } else {
+    host.classList.remove('is-loading');
+    app.classList.remove('zc-3d-pending');
+  }
+}
+
 function reveal() {
   const host = document.getElementById('mascot3d');
   const app = document.getElementById('app');
-  if (!host) return;
+  if (!host || !ctx) return;
   host.hidden = false;
-  requestAnimationFrame(() => host.classList.add('is-on'));
-  if (app) app.classList.add('zc-3d-on');
+  host.classList.add('is-on');
+  host.classList.remove('is-loading');
+  requestAnimationFrame(() => {
+    if (app) {
+      app.classList.add('zc-3d-on');
+      app.classList.remove('zc-3d-pending');
+    }
+  });
+}
+
+function resetFlags() {
+  const app = document.getElementById('app');
+  const host = document.getElementById('mascot3d');
+  if (app) app.classList.remove('zc-3d-on', 'zc-3d-pending');
+  if (host) {
+    host.classList.remove('is-on', 'is-loading');
+    host.hidden = true;
+  }
 }
 
 function fadeOut() {
-  document.getElementById('app')?.classList.remove('zc-3d-on');
+  resetFlags();
   const img = document.querySelector('.mascot');
-  if (img && ctx) img.style.transition = '';
-  const host = document.getElementById('mascot3d');
-  if (host) host.classList.remove('is-on');
+  if (img) img.style.transition = '';
 }
 
 function teardown() {
   if (!ctx) return;
-  stopLoop();
-  if (ctx.io) ctx.io.disconnect();
-  if (ctx.themeObs) ctx.themeObs.disconnect();
+  const c = ctx;
+  ctx = null;
+  stopLoopFor(c);
+  try { c.io && c.io.disconnect(); } catch (_) {}
+  try { c.themeObs && c.themeObs.disconnect(); } catch (_) {}
   document.removeEventListener('visibilitychange', onDocVis);
 
-  ctx.scene.traverse((o) => {
+  c.scene.traverse((o) => {
     if (o.isMesh) {
       o.geometry && o.geometry.dispose();
       const mats = Array.isArray(o.material) ? o.material : [o.material];
@@ -333,52 +415,76 @@ function teardown() {
       });
     }
   });
-  ctx.renderer.dispose();
-  ctx.renderer.forceContextLoss?.();
+  try { c.renderer.dispose(); } catch (_) {}
+  try { c.renderer.forceContextLoss && c.renderer.forceContextLoss(); } catch (_) {}
   fadeOut();
-  ctx = null;
-  const host = document.getElementById('mascot3d');
-  if (host) host.hidden = true;
+}
+
+/* ctx 已置空后仍要停掉旧 loop，所以单独留一个按实例停的版本 */
+function stopLoopFor(c) {
+  c.running = false;
+  if (c.raf) cancelAnimationFrame(c.raf);
+  c.raf = 0;
+}
+
+async function loadOnce() {
+  const [, buf] = await withTimeout(Promise.all([loadDeps(), fetchModel()]), BOOT_TIMEOUT, '依赖或模型加载超时');
+  const loader = new GLTFLoader();
+  loader.setMeshoptDecoder(MeshoptDecoder);
+  const gltf = await loader.parseAsync(buf, DIR);
+  if (!gltf || !gltf.scene) throw new Error('empty gltf');
+
+  let mesh = null;
+  let skeleton = null;
+  gltf.scene.traverse((o) => {
+    if (!mesh && o.isSkinnedMesh) { mesh = o; skeleton = o.skeleton; }
+  });
+  if (!mesh) throw new Error('no skinned mesh');
+
+  const root = gltf.scene;
+  const clip = gltf.animations && gltf.animations.length ? gltf.animations[0] : null;
+
+  build({ root, mesh, skeleton, clip, head: root.getObjectByName('Head'), neck: root.getObjectByName('Neck') });
+  if (!ctx) throw new Error('build failed');
+
+  // 先渲一帧再淡入，避免亮起瞬间是空场景
+  ctx.renderer.render(ctx.scene, ctx.camera);
+  reveal();
 }
 
 async function mount() {
   if (ctx || booting) return;
   if (document.getElementById('app')?.hidden) return;
-  if (window.innerWidth < MIN_WIDTH || !hasWebGL()) return;
+  if (!canRun()) return;
 
   booting = true;
-  try {
-    await loadDeps();
-    const loader = new GLTFLoader();
-    loader.setMeshoptDecoder(MeshoptDecoder);
-    const gltf = await loader.loadAsync(MODEL_URL);
-    if (!gltf || !gltf.scene) throw new Error('empty gltf');
-
-    let mesh = null;
-    let skeleton = null;
-    gltf.scene.traverse((o) => {
-      if (!mesh && o.isSkinnedMesh) { mesh = o; skeleton = o.skeleton; }
-    });
-    if (!mesh) throw new Error('no skinned mesh');
-
-    const root = gltf.scene;
-    const clip = gltf.animations && gltf.animations.length ? gltf.animations[0] : null;
-
-    build({ root, mesh, skeleton, clip, head: root.getObjectByName('Head'), neck: root.getObjectByName('Neck') });
-    if (!ctx) throw new Error('build failed');
-    reveal();
-  } catch (err) {
-    console.warn('[xiyin3d] 3D 看板未启用，保持静态立绘：', err && err.message ? err.message : err);
-    teardown();
-  } finally {
-    booting = false;
+  setPending(true);
+  let lastErr = null;
+  for (let i = 0; i < MAX_TRY; i++) {
+    try {
+      await loadOnce();
+      booting = false;
+      return;
+    } catch (err) {
+      lastErr = err;
+      if (ctx) teardown();          // 半成品（比如 build 之后渲染失败）先清掉
+      if (i + 1 < MAX_TRY) await sleep(RETRY_DELAY);
+    }
   }
+  booting = false;
+  setPending(false);
+  resetFlags();
+  console.warn('[xiyin3d] 3D 看板未启用，回落到静态立绘：', lastErr && lastErr.message ? lastErr.message : lastErr);
 }
 
+/* 登录后立刻挂（不再等 requestIdleCallback —— 页面忙时它可能拖到十几秒，看着就像「加载不出来」）
+   注意：这里抢在 mount 之前把 zc-3d-pending 打上，让静态立绘一帧都不露，
+   避免「先看到立绘、再啪一下换成 3D」。canRun() 不成立时什么都不做，静态立绘照常。 */
 function schedule() {
   if (scheduled) return;
-  const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 380));
-  scheduled = idle(() => { scheduled = 0; mount(); });
+  const app = document.getElementById('app');
+  if (app && !app.hidden && canRun()) app.classList.add('zc-3d-pending');
+  scheduled = setTimeout(() => { scheduled = 0; mount(); }, 80);
 }
 
 window.addEventListener('resize', () => {
@@ -394,7 +500,7 @@ window.ZC3D = { mount, teardown, get ctx() { return ctx; } };
   if (!app) return;
   if (!app.hidden) schedule();
   new MutationObserver(() => {
-    if (app.hidden) teardown();
+    if (app.hidden) { teardown(); setPending(false); resetFlags(); }
     else schedule();
   }).observe(app, { attributes: true, attributeFilter: ['hidden'] });
 })();

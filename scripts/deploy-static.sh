@@ -65,24 +65,28 @@ else
   echo "  提示：仓库内无 ${LOCAL_CONF}，跳过配置比对"
 fi
 
-step "2/6 生成 .gz（index.html + js/*.js + styles/*.css）"
+step "2/6 生成 .gz（index.html + js/*.js + styles/*.css + vendor 依赖 + assets/3d 模型）"
 cd "$REPO_ROOT/$SITE"
 mapfile -t FILES < <({ echo index.html; ls -1 js/*.js styles/*.css 2>/dev/null; })
+# three 依赖（687KB）与 GLB 模型（1.31MB）也要预压缩：它们是首次加载的大头
+for f in vendor/three.module.min.js vendor/three/*.js assets/3d/*.glb; do
+  if [ -f "$f" ]; then FILES+=("$f"); fi
+done
 for f in "${FILES[@]}"; do
   gzip -9 -kf "$f"
 done
 # 孤儿 .gz（源文件已改名/删除）只报告不删除，避免误删别人手上的东西
 while IFS= read -r g; do
   [ -f "${g%.gz}" ] || echo "  提示：孤儿 .gz  ${g}（源文件已不存在）"
-done < <(find js styles -maxdepth 1 -name '*.gz' 2>/dev/null | sort)
+done < <(find js styles vendor assets -maxdepth 3 -name '*.gz' 2>/dev/null | sort)
 
 step "3/6 本地校验：.gz 解压后必须与源文件逐字节一致"
 bad=0
 for f in "${FILES[@]}"; do
   if [ "$(md5sum "$f" | cut -d' ' -f1)" = "$(zcat "$f.gz" | md5sum | cut -d' ' -f1)" ]; then
-    printf '  OK  %-26s %7s B -> %6s B\n' "$f" "$(stat -c%s "$f")" "$(stat -c%s "$f.gz")"
+    printf '  OK  %-32s %8s B -> %8s B\n' "$f" "$(stat -c%s "$f")" "$(stat -c%s "$f.gz")"
   else
-    printf '  BAD %-26s\n' "$f"; bad=1
+    printf '  BAD %-32s\n' "$f"; bad=1
   fi
 done
 [ "$bad" -eq 0 ] || { echo "本地 .gz 校验失败，中止部署"; exit 1; }
