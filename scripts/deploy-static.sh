@@ -38,6 +38,25 @@ git fetch -q origin "$BRANCH"
 git merge --ff-only "origin/$BRANCH"
 git log --oneline -1
 
+step "1.5/6 nginx 配置漂移检查（只告警，绝不自动覆盖远端）"
+LOCAL_CONF="server/default-live.conf"
+REMOTE_CONF="${REMOTE_CONF:-/opt/zhichao-nginx/default.conf}"
+if [ -f "$LOCAL_CONF" ]; then
+  local_md5=$(md5sum "$LOCAL_CONF" | cut -d' ' -f1)
+  remote_md5=$(ssh -o BatchMode=yes "${REMOTE_USER}@${REMOTE_HOST}" \
+               "md5sum '${REMOTE_CONF}' 2>/dev/null | cut -d' ' -f1" || true)
+  if [ -z "${remote_md5:-}" ]; then
+    echo "  ⚠ 读不到远端 ${REMOTE_CONF}，跳过配置比对"
+  elif [ "$remote_md5" = "$local_md5" ]; then
+    echo "  OK  远端 nginx 配置与 repo/${LOCAL_CONF} 逐字节一致"
+  else
+    echo "  ⚠ 配置漂移：repo=${local_md5}  远端=${remote_md5}"
+    echo "    本次只部署静态站，不改配置。要同步请在本机改 ${LOCAL_CONF} → 提交 → 转 LF 后 scp 覆盖备份 → nginx -t → nginx -s reload"
+  fi
+else
+  echo "  提示：仓库内无 ${LOCAL_CONF}，跳过配置比对"
+fi
+
 step "2/6 生成 .gz（index.html + js/*.js + styles/*.css）"
 cd "$REPO_ROOT/$SITE"
 mapfile -t FILES < <({ echo index.html; ls -1 js/*.js styles/*.css 2>/dev/null; })
